@@ -1,0 +1,14 @@
+*.zip
+*.vim
+*.odt
+
+__pycache__/
+*.taghl
+tags
+*.pb
+
+!.gitignore
+!.gitkeep
+
+img
+mask

@@ -1,0 +1,69 @@
+다양한 데이터셋 대응 가능
+    bioseg
+    manga
+
+데이터셋 요구사항 검증
+    정해진 색 외에 다른 색(cmap 참조)은 없나?
+    개수는 같은가?
+    look-and-feel 체크
+    ...
+
+학습
+    tf2 이용
+
+모델
+    amazing semantic segmentation 사용
+    내가 구성한 모델도 사용
+
+테스트
+    hypothesis (generative test) 사용
+
+------------------------------------------------
+로깅, 메타데이터 관리는 sacred를 이용함.
+
+LICENSE
+README.md
+requirements.txt
+
+doc
+    todo.txt
+
+src
+    main.py         엔트리 포인트, 태스크 설정
+
+    util        재활용 가능 코드
+        fp.py
+        file_util.py
+        image_util.py
+
+    data        데이터 관련 코드
+        io.py       데이터 io
+        image.py    이미지 관련(img -> tfrecord..)
+
+    expr        실험 관련 코드
+        train.py    학습 루프
+        test.py     학습 이후 성능 평가 등
+
+    nn          뉴럴넷 구성 코드
+        model.py    모델 설정
+        loss.py
+        metric.py
+
+test
+    utils
+        fp_test.py
+        file_util_test.py
+        image_util_test.py
+
+    data      
+        io_test.py 
+        data_test.py 
+
+    expr
+        train_test.py
+        test_test.py 
+
+    nn
+        model_test.py
+        loss_test.py
+        metric_test.py
