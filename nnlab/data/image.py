@@ -1,8 +1,8 @@
 import cv2
 import deal
-import funcy as F
 import numpy as np
 
+from nnlab.utils import fp
 from nnlab.utils import dbg
 from nnlab.utils import image_utils as iu
 
@@ -17,7 +17,8 @@ def map_pixels(img, cond_color, true_color, false_color=None):
     dst_c = false_color.shape[-1]
     t_pixel = np.ones_like(cond_color)
     f_pixel = np.zeros_like(cond_color)
-    return F.rcompose(
+    return fp.go(
+        cond_color,
         # make mask
         lambda c: np.repeat(c, h*w, axis=0), 
         lambda m: m.reshape([h,w,c]),
@@ -32,7 +33,7 @@ def map_pixels(img, cond_color, true_color, false_color=None):
         # make return value
         lambda r: r * true_color,
         lambda r: r.astype(np.uint8),
-    )(cond_color)
+    )
 
 @deal.pre(
     lambda img, dic:
