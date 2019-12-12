@@ -28,6 +28,30 @@ def test_map_rbk_mask_to_1hot_mask():
     expected = cv2.imread('./tests/fixtures/masks/rbk1hot.png')
     assert np.array_equal(mapped, expected)
 
+    reverted = im.map_colors(mapped, rgb_1hot.inverse)
+    assert np.array_equal(reverted, img)
+
+def test_map_rk_img_to_1hot_img():
+    rk_img = np.array(
+        [[[0.,0.,0.], [0.,0.,0.]],  
+         [[0.,0.,0.], [0.,0.,0.]],  
+         [[0.,0.,1.], [0.,0.,1.]],  
+         [[0.,0.,1.], [0.,0.,1.]]])
+    src_dst = bidict({
+        (1., 0., 0.): (0.0, 0.0, 1.0),
+        (0., 0., 1.): (0.0, 1.0, 0.0),
+        (0., 0., 0.): (1.0, 0.0, 0.0)})
+    expected = np.array(
+        [[[1.,0.,0.], [1.,0.,0.]],  
+         [[1.,0.,0.], [1.,0.,0.]],  
+         [[0.,1.,0.], [0.,1.,0.]],  
+         [[0.,1.,0.], [0.,1.,0.]]])
+
+    mapped = im.map_colors(rk_img, src_dst)
+    assert np.array_equal(mapped, expected)
+    reverted = im.map_colors(mapped, src_dst.inverse)
+    assert np.array_equal(mapped, expected)
+
 @pytest.mark.xfail(raises=deal._exceptions.PreContractError)
 def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError():
     im.map_colors(
@@ -48,25 +72,3 @@ def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError_with_real_img():
         bidict({(255,  0,  0): (0.,0.,1.),
                 (  0,  0,  0): (1.,0.,0.)})
     )
-
-def test_map_rk_img_to_1hot_img():
-    rk_img = np.array(
-        [[[0.,0.,0.], [0.,0.,0.]],  
-         [[0.,0.,0.], [0.,0.,0.]],  
-         [[0.,0.,1.], [0.,0.,1.]],  
-         [[0.,0.,1.], [0.,0.,1.]]])
-    src_dst = {
-        (1., 0., 0.): (0.0, 0.0, 1.0),
-        (0., 0., 1.): (0.0, 1.0, 0.0),
-        (0., 0., 0.): (1.0, 0.0, 0.0)}
-    expected = np.array(
-        [[[1.,0.,0.], [1.,0.,0.]],  
-         [[1.,0.,0.], [1.,0.,0.]],  
-         [[0.,1.,0.], [0.,1.,0.]],  
-         [[0.,1.,0.], [0.,1.,0.]]])
-
-    mapped = im.map_colors(rk_img, src_dst)
-    np.array_equal(mapped, expected)
-
-    #decategorized = decategorize(categorized, origin_map)
-    #self.assertTrue(np.alltrue(img == decategorized))
