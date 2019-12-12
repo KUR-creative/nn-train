@@ -3,6 +3,8 @@ from glob import glob
 from bidict import bidict
 import cv2
 import numpy as np
+import pytest
+import deal
 
 from nnlab.data import image as im
 from nnlab.utils import image_utils as iu
@@ -24,5 +26,9 @@ def test_categorize_rbk_mask():
     # NOTE: Look and Feel test!
     #cv2.imshow('mask', categorized.astype(np.float64)); cv2.waitKey(0)
 
-def test_categorize_():
-    pass
+@pytest.mark.xfail(raises=deal._exceptions.PreContractError)
+def test_categorize_mask_with_insufficient_1hot_dic():
+    rgb_1hot = bidict({(255,  0,  0): (0.,0.,1.),
+                       (  0,  0,  0): (1.,0.,0.)})
+    img = cv2.imread('./tests/fixtures/masks/rbk.png')
+    categorized = im.categorize_with(img, rgb_1hot.inverse)

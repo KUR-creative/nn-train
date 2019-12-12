@@ -3,7 +3,8 @@ import numpy as np
 import funcy as F
 import deal
 
-from nnlab.utils.image_utils import unique_colors
+from nnlab.utils import image_utils as iu
+from nnlab.utils import dbg
 
 def map_pixels(img, cond_color, true_color, false_color=None):
     h,w,c = img.shape
@@ -32,6 +33,14 @@ def map_pixels(img, cond_color, true_color, false_color=None):
         lambda r: r.astype(np.uint8),
     )(cond_color)
 
+@deal.pre(
+    lambda img, dic:
+    dbg.print_if_not(
+        iu.unique_color_set(img) <= set(map( tuple, dic.values() )),
+        (' img = {} > {} = dic \n It means some pixels in img' 
+        +' cannot be mapped with this rgb<->1hot dict').format( 
+            iu.unique_color_set(img), str(set(map(tuple, dic.values())))
+    )))
 @deal.ensure(
     lambda img, _, result:
     (img.shape == result.shape and
@@ -70,16 +79,7 @@ def map_colors(img, dst_src_colormap):
     return ret_img
 
 def categorize_with(img, origin_map):
-    colors = unique_colors(img)
-    #print(colors, origin_map)
-    #exit()
-    assert set(map(tuple, colors.tolist() )) <= set(map(tuple, origin_map.values() )),\
-        (' {} > {} : It means some pixels in mask \n' 
-        +' cannot be categorized with this rgb<->1hot dict').format( 
-            str(set(map(tuple, colors.tolist()))),
-            str(set(map(tuple, origin_map.values())))
-        )
-
+    colors = iu.unique_colors(img)
 
     ret_img = map_colors(img, origin_map)
     return ret_img
@@ -141,6 +141,6 @@ def decategorize(categorized, origin_map):
                    & (img_3 == key_3)) # if [0,0,0]
             ret_img[masks] = origin
 
-    #print('cat\n', unique_colors(categorized))
-    #print('ret\n', unique_colors(ret_img))
+    #print('cat\n', iu.unique_colors(categorized))
+    #print('ret\n', iu.unique_colors(ret_img))
     return ret_img
