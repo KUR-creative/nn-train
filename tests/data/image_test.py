@@ -2,6 +2,7 @@ from glob import glob
 
 from bidict import bidict
 import cv2
+import numpy as np
 
 from nnlab.data import image as im
 from nnlab.utils import image_utils as iu
@@ -18,9 +19,10 @@ def test_categorize_rbk_mask():
     print(iu.unique_colors(img))
     print(categorized.dtype)
     print(iu.unique_colors(categorized))
+    assert img.dtype == categorized.dtype
 
     # Look and Feel test!
-    cv2.imshow('mask', categorized); cv2.waitKey(0)
+    cv2.imshow('mask', categorized.astype(np.float64)); cv2.waitKey(0)
 
 def test_categorize_():
     pass

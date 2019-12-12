@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import funcy as F
+import deal
 
 from nnlab.utils.image_utils import unique_colors
 
@@ -31,13 +32,21 @@ def map_pixels(img, cond_color, true_color, false_color=None):
         lambda r: r.astype(np.uint8),
     )(cond_color)
 
+@deal.ensure(
+    lambda img, _, result:
+    (img.shape == result.shape and
+     img.dtype == result.dtype))
 def map_colors(img, dst_src_colormap): 
+    '''
+    map colors of `img` w.r.t. `dst_src_colormap`
+    '''
     # {dst1:src1, dst2:src2, ...}
     # {one-hot: bgr, ...}
     h,w,_ = img.shape
+    dtype = img.dtype
     n_classes = len(dst_src_colormap)
-    ret_img = np.zeros((h,w,n_classes))
-    print('zeros dtype', ret_img.dtype)
+
+    ret_img = np.zeros((h,w,n_classes), dtype=dtype)
 
     if n_classes == 2:
         img_b, img_g, img_r = np.rollaxis(img, axis=-1)
