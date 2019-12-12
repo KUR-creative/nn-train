@@ -10,12 +10,12 @@ from nnlab.data import image as im
 from nnlab.utils import image_utils as iu
 
 def test_map_rbk_mask_to_1hot_mask():
-    rgb_1hot = bidict({(  0,  0,255): (255,  0,  0),
-                       (  0,255,  0): (  0,  0,255),
-                       (255,  0,  0): (  0,  0,  0)})
+    rgb_1hot = bidict({(255,  0,  0): (  0,  0,255),
+                       (  0,  0,255): (  0,255,  0),
+                       (  0,  0,  0): (255,  0,  0)})
 
     img = cv2.imread('./tests/fixtures/masks/rbk.png')
-    mapped = im.map_colors(img, rgb_1hot.inverse)
+    mapped = im.map_colors(img, rgb_1hot)
 
     print(img.dtype)
     print(iu.unique_colors(img))
