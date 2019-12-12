@@ -29,6 +29,19 @@ def test_map_rbk_mask_to_1hot_mask():
     assert np.array_equal(mapped, expected)
 
 @pytest.mark.xfail(raises=deal._exceptions.PreContractError)
+def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError():
+    im.map_colors(
+        np.array(
+            [[[0.,0.,0.], [0.,0.,0.]],
+             [[0.,0.,0.], [0.,0.,0.]],
+             [[1.,1.,1.], [1.,1.,1.]],
+             [[1.,1.,1.], [1.,1.,1.]]],
+            dtype=np.float64),
+        {(0.0, 1.0): (1., 1., 1.),
+         (1.0, 0.0): (0., 0., 0.)}
+    )
+
+@pytest.mark.xfail(raises=deal._exceptions.PreContractError)
 def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError_with_real_img():
     im.map_colors(
         cv2.imread('./tests/fixtures/masks/rbk.png'), 

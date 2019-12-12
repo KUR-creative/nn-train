@@ -42,9 +42,12 @@ def map_pixels(img, cond_color, true_color, false_color=None):
             iu.unique_color_set(img), str(set(map(tuple, dic.values())))
     )))
 @deal.ensure(
-    lambda img, _, result:
-    (img.shape == result.shape and
-     img.dtype == result.dtype))
+    lambda img, dic, result:
+    dbg.print_if_not(
+        (img.dtype == result.dtype and len(dic) == result.shape[-1]),
+        'img: {}\t{} \nret: {}\t{}'.format(
+            img.dtype, img.shape, result.dtype, result.shape
+    )))
 def map_colors(img, dst_src_colormap): 
     '''
     map colors of `img` w.r.t. `dst_src_colormap`
