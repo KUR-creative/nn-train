@@ -55,30 +55,11 @@ def map_colors(img, dst_src_colormap):
     # {dst1:src1, dst2:src2, ...}
     # {one-hot: bgr, ...}
     h,w,_ = img.shape
-    dtype = img.dtype
-    n_classes = len(dst_src_colormap)
+    c_dst = len(dst_src_colormap)
 
-    ret_img = np.zeros((h,w,n_classes), dtype=dtype)
-
-    if n_classes == 2:
-        img_b, img_g, img_r = np.rollaxis(img, axis=-1)
-        for dst_color, (src_b,src_g,src_r) in dst_src_colormap.items():
-            masks = ((img_b == src_b) 
-                   & (img_g == src_g) 
-                   & (img_r == src_r)) # if [0,0,0]
-            ret_img[masks] = dst_color
-    elif n_classes == 3:
-        img_b, img_g, img_r = np.rollaxis(img, axis=-1)
-        for dst_color, (src_b,src_g,src_r) in dst_src_colormap.items():
-            masks = ((img_b == src_b) 
-                   & (img_g == src_g) 
-                   & (img_r == src_r)) # if [0,0,0]
-            ret_img[masks] = dst_color
-    elif n_classes == 4:
-        for c,(dst_color, src_bgr) in enumerate(dst_src_colormap.items()):
-            ret_img += map_pixels(img, src_bgr, dst_color)
-
-    # ... TODO: refactor it!!!
+    ret_img = np.zeros((h,w,c_dst), dtype=img.dtype)
+    for c,(dst_color, src_bgr) in enumerate(dst_src_colormap.items()):
+        ret_img += map_pixels(img, src_bgr, dst_color)
     return ret_img
 
 def decategorize(categorized, origin_map):
