@@ -21,8 +21,8 @@ def test_categorize_rbk_mask():
     print(iu.unique_colors(categorized))
     assert img.dtype == categorized.dtype
 
-    # Look and Feel test!
-    cv2.imshow('mask', categorized.astype(np.float64)); cv2.waitKey(0)
+    # NOTE: Look and Feel test!
+    #cv2.imshow('mask', categorized.astype(np.float64)); cv2.waitKey(0)
 
 def test_categorize_():
     pass
