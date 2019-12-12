@@ -33,7 +33,7 @@ def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError():
     im.map_colors(
         np.array(
             [[[0.,0.,0.], [0.,0.,0.]],
-             [[0.,0.,0.], [0.,0.,0.]],
+             [[0.,0.,1.], [0.,0.,1.]],
              [[1.,1.,1.], [1.,1.,1.]],
              [[1.,1.,1.], [1.,1.,1.]]],
             dtype=np.float64),
