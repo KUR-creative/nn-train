@@ -1,5 +1,3 @@
-from glob import glob
-
 from bidict import bidict
 import cv2
 import numpy as np

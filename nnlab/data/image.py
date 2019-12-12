@@ -1,4 +1,3 @@
-import cv2
 import deal
 import numpy as np
 
@@ -12,8 +11,7 @@ def map_pixels(img, cond_color, true_color, false_color=None):
     cond_color  = [[cond_color]]
     true_color  = [[true_color]]
     false_color = (np.zeros_like(true_color) 
-                   if false_color is None 
-                   else false_color)
+                   if false_color is None else false_color)
     dst_c = false_color.shape[-1]
     t_pixel = np.ones_like(cond_color)
     f_pixel = np.zeros_like(cond_color)
@@ -41,16 +39,14 @@ def map_pixels(img, cond_color, true_color, false_color=None):
         iu.unique_color_set(img) <= set(map( tuple, dic.keys() )),
         (' img = {} > {} = dic \n It means some pixels in img' 
         +' cannot be mapped with this rgb<->1hot dict').format( 
-            iu.unique_color_set(img), str(set(map(tuple, dic.values())))
-    )))
+            iu.unique_color_set(img), str(set(map(tuple, dic.values()))))))
 @deal.ensure(
     lambda img, dic, result:
     dbg.print_if_not(
         (img.dtype == result.dtype and 
          len(dic.values()) == result.shape[-1]),
         'img: {}\t{} \nret: {}\t{}'.format(
-            img.dtype, img.shape, result.dtype, result.shape
-    )))
+            img.dtype, img.shape, result.dtype, result.shape)))
 def map_colors(img, src_dst_colormap): 
     '''
     Map colors of `img` w.r.t. `src_dst_colormap`.
