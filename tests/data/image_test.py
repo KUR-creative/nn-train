@@ -48,3 +48,25 @@ def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError_with_real_img():
         bidict({(255,  0,  0): (0.,0.,1.),
                 (  0,  0,  0): (1.,0.,0.)}).inverse
     )
+
+def test_map_rk_img_to_1hot_img():
+    rk_img = np.array(
+        [[[0.,0.,0.], [0.,0.,0.]],  
+         [[0.,0.,0.], [0.,0.,0.]],  
+         [[0.,0.,1.], [0.,0.,1.]],  
+         [[0.,0.,1.], [0.,0.,1.]]])
+    dst_src = {
+        (0.0, 0.0, 1.0): [1., 0., 0.],
+        (0.0, 1.0, 0.0): [0., 0., 1.],
+        (1.0, 0.0, 0.0): [0., 0., 0.]}
+    expected = np.array(
+        [[[1.,0.,0.], [1.,0.,0.]],  
+         [[1.,0.,0.], [1.,0.,0.]],  
+         [[0.,1.,0.], [0.,1.,0.]],  
+         [[0.,1.,0.], [0.,1.,0.]],])
+
+    mapped = im.map_colors(rk_img, dst_src)
+    np.array_equal(mapped, expected)
+
+    #decategorized = decategorize(categorized, origin_map)
+    #self.assertTrue(np.alltrue(img == decategorized))
