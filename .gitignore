@@ -10,5 +10,4 @@ tags
 !.gitignore
 !.gitkeep
 
-img
-mask
+dataset
