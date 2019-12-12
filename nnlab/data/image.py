@@ -1,10 +1,11 @@
 import cv2
-import numpy as np
-import funcy as F
 import deal
+import funcy as F
+import numpy as np
 
-from nnlab.utils import image_utils as iu
 from nnlab.utils import dbg
+from nnlab.utils import image_utils as iu
+
 
 def map_pixels(img, cond_color, true_color, false_color=None):
     h,w,c = img.shape
@@ -51,10 +52,9 @@ def map_pixels(img, cond_color, true_color, false_color=None):
     )))
 def map_colors(img, src_dst_colormap): 
     '''
-    map colors of `img` w.r.t. `src_dst_colormap`
+    Map colors of `img` w.r.t. `src_dst_colormap`.
+    src_dst_colormap: {src1:dst1, src2:dst2, ...}
     '''
-    # {dst1:src1, dst2:src2, ...}
-    # {one-hot: bgr, ...}
     h,w,_ = img.shape
     c_dst = len(src_dst_colormap.values())
 
@@ -79,7 +79,7 @@ def decategorize(categorized, origin_map):
                     ret_img[y,x] = origin
     return ret_img
     '''
-    #TODO: Need to vectorize!
+    #TODO: Need to generalize!
     h,w,n_classes = categorized.shape
     n_channels = len(next(iter(origin_map.values())))
     ret_img = np.zeros((h,w,n_channels))
