@@ -28,7 +28,8 @@ def test_map_rbk_mask_to_1hot_mask():
 
 @pytest.mark.xfail(raises=deal._exceptions.PreContractError)
 def test_map_mask_colors_with_insufficient_1hot_dic():
-    rgb_1hot = bidict({(255,  0,  0): (0.,0.,1.),
-                       (  0,  0,  0): (1.,0.,0.)})
-    img = cv2.imread('./tests/fixtures/masks/rbk.png')
-    mapped = im.map_colors(img, rgb_1hot.inverse)
+    im.map_colors(
+        cv2.imread('./tests/fixtures/masks/rbk.png'), 
+        bidict({(255,  0,  0): (0.,0.,1.),
+                (  0,  0,  0): (1.,0.,0.)}).inverse
+    )
