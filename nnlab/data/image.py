@@ -78,12 +78,6 @@ def map_colors(img, dst_src_colormap):
     # ... TODO: refactor it!!!
     return ret_img
 
-def categorize_with(img, origin_map):
-    colors = iu.unique_colors(img)
-
-    ret_img = map_colors(img, origin_map)
-    return ret_img
-
 def decategorize(categorized, origin_map):
     '''
     #TODO: Need to vectorize!
