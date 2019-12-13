@@ -1,3 +1,4 @@
+import funcy as F
 import sys
 
 def print_if_not(cond, msg): 
@@ -9,3 +10,12 @@ def print_if_not(cond, msg):
         print(msg, file=sys.stderr)
 
     return cond
+
+@F.autocurry
+def tap(x, f=print):
+    '''
+    If use your own print function,
+    tap(f=my_print)(x)
+    '''
+    f(x)
+    return x
