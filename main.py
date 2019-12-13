@@ -7,10 +7,11 @@ from nnlab.utils import file_utils as fu
 
 
 '''
-
 `img_dirpath` and `mask_dirpath` are leaf directory 
 that contains image in flat manner. (Only contains images, no recursive 
 directory structure.)
+'''
+
 '''
 # Get image,mask sequence.
 img_paths  = fu.human_sorted(fu.children('./dataset/snet285/image'))
@@ -38,3 +39,4 @@ dataset.generate(
     bidict({(255,255,255): (0,1),
             (  0,  0,  0): (1,0)}),
     './dataset/snet285wk.tfrecords')
+'''
