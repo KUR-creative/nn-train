@@ -45,9 +45,9 @@ def test_curried_with_wk_masks():
     reverteds = fp.lmap(im.map_colors(wk_1hot.inverse), mappeds)
 
     # NOTE: Look and Feel test!
-    cv2.imshow('0', mappeds[0][:,:,0].astype(np.float64))
-    cv2.imshow('1', mappeds[0][:,:,1].astype(np.float64))
-    cv2.imshow('reverted', reverteds[0]); cv2.waitKey(0)
+    #cv2.imshow('0', mappeds[0][:,:,0].astype(np.float64))
+    #cv2.imshow('1', mappeds[0][:,:,1].astype(np.float64))
+    #cv2.imshow('reverted', reverteds[0]); cv2.waitKey(0)
 
     for origin, reverted in zip(imgs, reverteds):
         assert np.array_equal(origin, reverted)
