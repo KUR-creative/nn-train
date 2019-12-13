@@ -1,6 +1,8 @@
 import deal
 import numpy as np
 
+from bidict import bidict
+
 from nnlab.utils import fp
 from nnlab.utils import dbg
 from nnlab.utils import image_utils as iu
@@ -34,6 +36,10 @@ def map_pixels(img, cond_color, true_color, false_color=None):
     )
 
 @fp.curry
+@deal.pre(
+    lambda dic, img: 
+    ((type(dic) is bidict) or (type(dic) is dict)) and
+    type(img) is np.ndarray)
 @deal.pre(
     lambda dic, img:
     dbg.print_if_not(
