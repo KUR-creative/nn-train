@@ -23,7 +23,7 @@ def map_pixels(img, cond_color, true_color, false_color=None):
         # make where array 
         lambda m: np.all(img == m, axis=-1),
         lambda w: np.expand_dims(w, axis=-1),
-        lambda w: np.repeat(w, 3, axis = -1),
+        lambda w: np.repeat(w, c, axis = -1),
         # make t/f map
         lambda w: np.where(w, t_pixel, f_pixel),
         lambda m: np.expand_dims(m[:,:,0], axis=-1),
@@ -45,18 +45,23 @@ def map_pixels(img, cond_color, true_color, false_color=None):
     lambda dic, img, result:
     dbg.print_if_not(
         (img.dtype == result.dtype and 
-         len(dic.values()) == result.shape[-1]),
-        'img: {}\t{} \nret: {}\t{}'.format(
-            img.dtype, img.shape, result.dtype, result.shape)))
+         img.shape[0] == result.shape[0] and
+         img.shape[1] == result.shape[1]),
+        ('img: {}\t{} \nret: {}\t{}, \n'
+        +'img h,w must same, but c can be different'.format(
+            img.dtype, img.shape, result.dtype, result.shape))))
 def map_colors(src_dst_colormap, img): 
     '''
     Map colors of `img` w.r.t. `src_dst_colormap`.
     src_dst_colormap: {src1:dst1, src2:dst2, ...}
     '''
     h,w,_ = img.shape
-    c_dst = len(src_dst_colormap.values())
+    some_dst_color = next(iter(src_dst_colormap.values()))
+    c_dst = len(some_dst_color)
 
     ret_img = np.zeros((h,w,c_dst), dtype=img.dtype)
     for c, (src_bgr, dst_color) in enumerate(src_dst_colormap.items()):
-        ret_img += map_pixels(img, src_bgr, dst_color)
+        mapped = map_pixels(img, src_bgr, dst_color)
+        ret_img += mapped
+        #ret_img += map_pixels(img, src_bgr, dst_color)
     return ret_img

@@ -42,15 +42,15 @@ def test_curried_with_wk_masks():
         cv2.imread('./tests/fixtures/masks/wk.png'),
         np.array([[[255,255,255],[0,0,0]]])]
     mappeds = fp.lmap(im.map_colors(wk_1hot), imgs)
-    print(mappeds[0].shape)
-    print(mappeds[1].shape)
-    cv2.imshow('0', mappeds[0][:,:,0].astype(np.float64))
-    cv2.imshow('1', mappeds[0][:,:,1].astype(np.float64)); cv2.waitKey(0)
-    r = im.map_colors(wk_1hot.inverse, mappeds[1])
-    #reverteds = fp.lmap(im.map_colors(wk_1hot.inverse), mappeds)
+    reverteds = fp.lmap(im.map_colors(wk_1hot.inverse), mappeds)
 
-    #for origin, reverted in zip(imgs, reverteds):
-        #assert np.array_equal(origin, reverted)
+    # NOTE: Look and Feel test!
+    cv2.imshow('0', mappeds[0][:,:,0].astype(np.float64))
+    cv2.imshow('1', mappeds[0][:,:,1].astype(np.float64))
+    cv2.imshow('reverted', reverteds[0]); cv2.waitKey(0)
+
+    for origin, reverted in zip(imgs, reverteds):
+        assert np.array_equal(origin, reverted)
 
 def test_map_rk_img_to_1hot_img():
     rk_img = np.array(
