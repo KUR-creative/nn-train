@@ -10,6 +10,26 @@ from tqdm import tqdm
 from nnlab.utils import fp
 from nnlab.data import image as im #image util
 
+def rgb_tup(hex_int):
+    assert 0 < hex_int < 0xFFFFFF, hex_int
+    return (
+        (hex_int & 0xFF0000) >> (8 * 2),
+        (hex_int & 0x00FF00) >> (8 * 1),
+        (hex_int & 0x0000FF) >> (8 * 0))
+
+def one_hot_tup(num_class, bin_int):
+    assert 0 < bin_int <= 2**(num_class - 1), \
+        'assert fail: 0 < {} <= {}'.format(
+            bin_int, 2**(num_class - 1))
+    assert (bin_int % 2 == 0 or bin_int == 1), \
+        'assert fail: {} % 2 == 0 or {} == 1'.format(bin_int)
+
+    ret = [0] * num_class
+    for i in range(num_class + 1):
+        if bin_int >> i == 0:
+            ret[-i] = 1
+            return tuple(ret)
+
 def _bytes_feature(value):
     """Returns a bytes_list from a string / byte."""
     if isinstance(value, type(tf.constant(0))):
