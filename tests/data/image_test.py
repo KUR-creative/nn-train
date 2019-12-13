@@ -73,7 +73,7 @@ def test_map_rk_img_to_1hot_img():
     reverted = im.map_colors(src_dst.inverse, mapped)
     assert np.array_equal(expected, mapped)
 
-@pytest.mark.xfail(raises=deal._exceptions.PreContractError)
+@pytest.mark.xfail(raises=AssertionError)
 def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError():
     im.map_colors(
         {(1., 1., 1.): (0.0, 1.0),
@@ -85,7 +85,7 @@ def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError():
              [[1.,1.,1.], [1.,1.,1.]]],
             dtype=np.float64))
 
-@pytest.mark.xfail(raises=deal._exceptions.PreContractError)
+@pytest.mark.xfail(raises=AssertionError)
 def test_if_img_has_color_not_in_1hot_dic_then_raise_PreError_with_real_img():
     im.map_colors(
         bidict({

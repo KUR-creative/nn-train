@@ -6,7 +6,6 @@ import numpy as np
 from bidict import bidict
 import tensorflow as tf
 from tqdm import tqdm
-import deal
 
 from nnlab.utils import fp
 from nnlab.data import image as im #image util
@@ -23,13 +22,6 @@ def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
-
-@deal.pre(lambda imgs, masks, *_: 
-    len(imgs) == len(masks), message='len(img_paths) != len(mak_paths)')
-@deal.pre(lambda imgs, masks, *_: 
-    (all(map(lambda p: os.path.exists(p), imgs)) and
-     all(map(lambda p: os.path.exists(p), masks))),
-    message='some file path are not exist')
 def generate(img_paths, mask_paths, src_dst_colormap, 
         out_path, look_and_feel_check=False):
     '''
@@ -41,7 +33,16 @@ def generate(img_paths, mask_paths, src_dst_colormap,
 
     Image, mask are must be paired, and exists.
     '''
+    # Preconditions
+    assert len(img_paths) == len(mask_paths), \
+        'len(img_paths) = {} != {} = len(mask_paths)'.format(
+            len(img_paths), len(mask_paths))
+    assert all(map(lambda p: os.path.exists(p), img_paths)), \
+        'some image file path are not exist'
+    assert all(map(lambda p: os.path.exists(p), mask_paths)), \
+        'some mask file path are not exist'
 
+    # Load images and masks.
     imgseq = fp.map(cv2.imread, img_paths)
     maskseq = fp.map(
         fp.pipe(cv2.imread, im.map_colors(src_dst_colormap)), mask_paths)

@@ -1,6 +1,4 @@
-import deal
 import numpy as np
-
 from bidict import bidict
 
 from nnlab.utils import fp
@@ -36,31 +34,22 @@ def map_pixels(img, cond_color, true_color, false_color=None):
     )
 
 @fp.curry
-@deal.pre(
-    lambda dic, img: 
-    ((type(dic) is bidict) or (type(dic) is dict)) and
-    type(img) is np.ndarray)
-@deal.pre(
-    lambda dic, img:
-    dbg.print_if_not(
-        iu.unique_color_set(img) <= set(map( tuple, dic.keys() )),
-        (' img = {} > {} = dic \n It means some pixels in img' 
-        +' cannot be mapped with this rgb<->1hot dict').format( 
-            iu.unique_color_set(img), str(set(map(tuple, dic.values()))))))
-@deal.ensure(
-    lambda dic, img, result:
-    dbg.print_if_not(
-        (img.dtype == result.dtype and 
-         img.shape[0] == result.shape[0] and
-         img.shape[1] == result.shape[1]),
-        ('img: {}\t{} \nret: {}\t{}, \n'
-        +'img h,w must same, but c can be different'.format(
-            img.dtype, img.shape, result.dtype, result.shape))))
 def map_colors(src_dst_colormap, img): 
     '''
     Map colors of `img` w.r.t. `src_dst_colormap`.
     src_dst_colormap: {src1:dst1, src2:dst2, ...}
     '''
+    # Preconditions
+    dic = src_dst_colormap
+    assert ((type(dic) is bidict) or (type(dic) is dict) and 
+            type(img) is np.ndarray), \
+        'type(src_dst_colormap) = {}, type(img) = {}'.format(
+            type(dic), type(img))
+    assert iu.unique_color_set(img) <= set(map( tuple, dic.keys() )), \
+            (' img = {} > {} = dic \n It means some pixels in img' 
+            +' cannot be mapped with this rgb<->1hot dict').format( 
+                iu.unique_color_set(img), str(set(map(tuple, dic.values()))))
+
     h,w,_ = img.shape
     some_dst_color = next(iter(src_dst_colormap.values()))
     c_dst = len(some_dst_color)
@@ -69,5 +58,5 @@ def map_colors(src_dst_colormap, img):
     for c, (src_bgr, dst_color) in enumerate(src_dst_colormap.items()):
         mapped = map_pixels(img, src_bgr, dst_color)
         ret_img += mapped
-        #ret_img += map_pixels(img, src_bgr, dst_color)
+
     return ret_img
