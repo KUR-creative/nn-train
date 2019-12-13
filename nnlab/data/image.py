@@ -33,21 +33,22 @@ def map_pixels(img, cond_color, true_color, false_color=None):
         lambda r: r.astype(np.uint8),
     )
 
+@fp.curry
 @deal.pre(
-    lambda img, dic:
+    lambda dic, img:
     dbg.print_if_not(
         iu.unique_color_set(img) <= set(map( tuple, dic.keys() )),
         (' img = {} > {} = dic \n It means some pixels in img' 
         +' cannot be mapped with this rgb<->1hot dict').format( 
             iu.unique_color_set(img), str(set(map(tuple, dic.values()))))))
 @deal.ensure(
-    lambda img, dic, result:
+    lambda dic, img, result:
     dbg.print_if_not(
         (img.dtype == result.dtype and 
          len(dic.values()) == result.shape[-1]),
         'img: {}\t{} \nret: {}\t{}'.format(
             img.dtype, img.shape, result.dtype, result.shape)))
-def map_colors(img, src_dst_colormap): 
+def map_colors(src_dst_colormap, img): 
     '''
     Map colors of `img` w.r.t. `src_dst_colormap`.
     src_dst_colormap: {src1:dst1, src2:dst2, ...}
@@ -56,6 +57,6 @@ def map_colors(img, src_dst_colormap):
     c_dst = len(src_dst_colormap.values())
 
     ret_img = np.zeros((h,w,c_dst), dtype=img.dtype)
-    for c,(src_bgr, dst_color) in enumerate(src_dst_colormap.items()):
+    for c, (src_bgr, dst_color) in enumerate(src_dst_colormap.items()):
         ret_img += map_pixels(img, src_bgr, dst_color)
     return ret_img
