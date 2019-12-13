@@ -44,8 +44,7 @@ def old_snet_data(dset_dict):
         )),
         train_imgpaths, train_maskpaths,
         valid_imgpaths, valid_maskpaths,
-        test_imgpaths,  test_maskpaths
-    )
+        test_imgpaths,  test_maskpaths)
 
     # 정해진 색 외에 다른 색(cmap 참조)은 없나?
     # look-and-feel 체크
