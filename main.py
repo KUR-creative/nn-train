@@ -40,3 +40,9 @@ dataset.generate(
             (  0,  0,  0): (1,0)}),
     './dataset/snet285wk.tfrecords')
 '''
+
+def main():
+    #./dataset/snet285/indices/rbk/190421rbk200.yml
+
+if __name__ == '__main__':
+    main()

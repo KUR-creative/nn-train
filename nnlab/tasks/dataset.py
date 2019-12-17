@@ -1,3 +1,7 @@
+'''
+`tasks` package are collection of useful scripts.
+`dataset` module are script for dataset management
+'''
 from glob import glob
 
 import os
@@ -42,21 +46,40 @@ def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
-def generate(img_paths, mask_paths, src_dst_colormap, 
-        out_path, look_and_feel_check=False):
+def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
+        src_dst_colormap, out_path, look_and_feel_check=False):
     '''
-    Generate dataset using images from `img_paths`, masks from `mask_paths`.
+    Generate dataset using image, mask path pairs 
+    from `train_path_pairs`, `valid_path_pairs`, `test_path_pairs`.
     Masks are mapped by src_dst_colormap. Finally, dataset is saved to `out_path`.
 
-    if look_and_feel_check == True, load and display 
+    `src_dst_colormap` is encoded and saved in src_rgbs and dst_1hots.
+    imag, mask pairs are saved in [train-pairs, valid-pairs, test-pairs] sequence.
+
+    output dataset is 
+    [
+        {num_train: TR,
+         num_valid: VA,
+         num_test:  TE,
+         num_class:  N}
+        {src_rgbs:  [ 0x??, 0x??, .. ]
+         dst_1hots: [ 1, 2, 4, 8.. ]}
+        {h:, w:, c:, mc:, img:, mask:}
+        {h:, w:, c:, mc:, img:, mask:}
+        ...
+    ]
+
+    If look_and_feel_check == True, load and display 
     image and masks in generated dataset.
 
-    Image, mask are must be paired, and exists.
+    Image, mask paths are must be paired, and exists.
     '''
     # Preconditions
-    assert len(img_paths) == len(mask_paths), \
-        'len(img_paths) = {} != {} = len(mask_paths)'.format(
-            len(img_paths), len(mask_paths))
+    num_train = len(train_path_pairs)
+    num_valid = len(valid_path_pairs)
+    num_test  = len(test_path_pairs)
+    img_paths, mask_paths = fp.unzip(
+        train_path_pairs + valid_path_pairs + test_path_pairs)
     assert all(map(lambda p: os.path.exists(p), img_paths)), \
         'some image file path are not exist'
     assert all(map(lambda p: os.path.exists(p), mask_paths)), \
