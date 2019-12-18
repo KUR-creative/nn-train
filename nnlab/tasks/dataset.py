@@ -10,6 +10,8 @@ import numpy as np
 from bidict import bidict
 import tensorflow as tf
 from tqdm import tqdm
+from pathlib import Path
+import funcy as F
 
 from nnlab.utils import fp
 from nnlab.data import image as im #image util
@@ -33,6 +35,29 @@ def one_hot_tup(num_class, bin_int):
         if bin_int >> i == 0:
             ret[-i] = 1
             return tuple(ret)
+
+def distill(dset_kind, dset_dic):
+    '''
+    Distill information from `dset_dic`(dataset dictionary): 
+    Get (`train_path_pairs`, `valid_path_pairs`, `test_path_pairs`, 
+    and `src_dst_colormap`).
+    '''
+    dic = dset_dic
+    if dset_kind == 'old_snet': #TODO: Use multimethod
+        def path_joiner(parent):
+            return lambda p: str(Path(parent, p))
+        def path_pairs(img_names, mask_names):
+            return list(zip(
+                map(path_joiner(dic['imgs_dir']), img_names),
+                map(path_joiner(dic['masks_dir']), mask_names)))
+
+        return dict(
+            train = path_pairs(dic['train_imgs'], dic['train_masks']),
+            valid = path_pairs(dic['valid_imgs'], dic['valid_masks']),
+            test  = path_pairs(dic['test_imgs'], dic['test_masks']),
+            cmap  = bidict(F.zipdict(
+                map(tuple,dic['img_rgbs']), map(tuple,dic['one_hots']))))
+
 
 def _bytes_feature(value):
     """Returns a bytes_list from a string / byte."""

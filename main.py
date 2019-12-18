@@ -5,6 +5,7 @@ from bidict import bidict
 from nnlab.tasks import dataset
 from nnlab.utils import file_utils as fu
 
+import yaml
 
 '''
 `img_dirpath` and `mask_dirpath` are leaf directory 
@@ -42,7 +43,24 @@ dataset.generate(
 '''
 
 def main():
-    #./dataset/snet285/indices/rbk/190421rbk200.yml
+    with open('dataset/snet285/indices/rbk/190421rbk200.yml') as f:
+        dset_dic = yaml.safe_load(f)
+
+    dset = dataset.distill('old_snet', dset_dic)
+    train_path_pairs = dset['train']
+    valid_path_pairs = dset['valid']
+    test_path_pairs  = dset['test']
+    src_dst_colormap = dset['cmap']
+
+    print(train_path_pairs)
+    print(valid_path_pairs)
+    print(test_path_pairs)
+    print(src_dst_colormap)
+
+    dataset.generate(
+        train_path_pairs, valid_path_pairs, test_path_pairs,
+        src_dst_colormap, 'test_dset.tfrecords', 
+        look_and_feel_check=True)
 
 if __name__ == '__main__':
     main()
