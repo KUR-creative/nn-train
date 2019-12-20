@@ -105,10 +105,11 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
     num_test  = len(test_path_pairs)
     img_paths, mask_paths = fp.unzip(
         train_path_pairs + valid_path_pairs + test_path_pairs)
-    assert all(map(lambda p: os.path.exists(p), img_paths)), \
-        'some image file path are not exist'
-    assert all(map(lambda p: os.path.exists(p), mask_paths)), \
-        'some mask file path are not exist'
+    for ipath, mpath in zip(img_paths, mask_paths):
+        assert os.path.exists(ipath), \
+            f'image file "{ipath}" is not exists'
+        assert os.path.exists(mpath), \
+            f'image file "{mpath}" is not exists'
 
     # Load images and masks.
     imgseq = fp.map(cv2.imread, img_paths)
