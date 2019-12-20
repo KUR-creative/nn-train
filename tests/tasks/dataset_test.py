@@ -18,6 +18,21 @@ def test_one_hot_tup():
 def test_one_hot_tup_assert():
     assert one_hot_tup(4, 1 << 4)
 
+
+@pytest.mark.xfail(raises=AssertionError)
+def test_rgb_hex_input_must_be_len3_tuple():
+    dataset.rgb_hex((1,2,3,4))
+
+@pytest.mark.xfail(raises=AssertionError)
+def test_rgb_hex_input_must_0to255_tuple():
+    dataset.rgb_hex((1,2,-3))
+
+def test_rgb_hex():
+    assert dataset.rgb_hex((255,255,255)) == 0xFFFFFF
+    assert dataset.rgb_hex((255,  0,255)) == 0xFF00FF
+    assert dataset.rgb_hex((  5,  2,0xB)) == 0x05020B
+
+@pytest.mark.skip(reason="no way of currently testing this")
 def test_generate_and_load_tfrecord_dataset(tmp_path):
     # Generate dataset from old snet dataset
     with open('tests/fixtures/dataset/snet285/indices/wk/190421wk50.yml') as f:

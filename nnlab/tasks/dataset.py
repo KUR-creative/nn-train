@@ -16,12 +16,19 @@ import funcy as F
 from nnlab.utils import fp
 from nnlab.data import image as im #image util
 
-def rgb_tup(hex_int):
-    assert 0 < hex_int < 0xFFFFFF, hex_int
+def rgb_tup(rgb_hex):
+    assert 0 < rgb_hex < 0xFFFFFF, rgb_hex
     return (
-        (hex_int & 0xFF0000) >> (8 * 2),
-        (hex_int & 0x00FF00) >> (8 * 1),
-        (hex_int & 0x0000FF) >> (8 * 0))
+        (rgb_hex & 0xFF0000) >> (8 * 2),
+        (rgb_hex & 0x00FF00) >> (8 * 1),
+        (rgb_hex & 0x0000FF) >> (8 * 0))
+
+def rgb_hex(rgb_tup):
+    assert len(rgb_tup) == 3
+    for val in rgb_tup:
+        assert 0 <= val <= 255, f'assert 0 <= {val} <= 255'
+    r,g,b = rgb_tup
+    return (r << (8*2)) + (g << (8*1)) + b
 
 def one_hot_tup(num_class, bin_int):
     assert 0 < bin_int <= 2**(num_class - 1), \
