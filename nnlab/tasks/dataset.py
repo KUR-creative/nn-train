@@ -16,32 +16,33 @@ import funcy as F
 from nnlab.utils import fp
 from nnlab.data import image as im #image util
 
-def rgb_tup(rgb_hex):
-    assert 0 < rgb_hex < 0xFFFFFF, rgb_hex
+def tup_rgb(hex_rgb):
+    assert 0 < hex_rgb < 0xFFFFFF, hex_rgb
     return (
-        (rgb_hex & 0xFF0000) >> (8 * 2),
-        (rgb_hex & 0x00FF00) >> (8 * 1),
-        (rgb_hex & 0x0000FF) >> (8 * 0))
+        (hex_rgb & 0xFF0000) >> (8 * 2),
+        (hex_rgb & 0x00FF00) >> (8 * 1),
+        (hex_rgb & 0x0000FF) >> (8 * 0))
 
-def rgb_hex(rgb_tup):
-    assert len(rgb_tup) == 3
-    for val in rgb_tup:
+def hex_rgb(tup_rgb):
+    assert len(tup_rgb) == 3
+    for val in tup_rgb:
         assert 0 <= val <= 255, f'assert 0 <= {val} <= 255'
-    r,g,b = rgb_tup
+    r,g,b = tup_rgb
     return (r << (8*2)) + (g << (8*1)) + b
 
-def one_hot_tup(num_class, bin_int):
-    assert 0 < bin_int <= 2**(num_class - 1), \
+def tup_1hot(num_class, bin_1hot):
+    assert 0 < bin_1hot <= 2**(num_class - 1), \
         'assert fail: 0 < {} <= {}'.format(
-            bin_int, 2**(num_class - 1))
-    assert (bin_int % 2 == 0 or bin_int == 1), \
-        'assert fail: {} % 2 == 0 or {} == 1'.format(bin_int)
+            bin_1hot, 2**(num_class - 1))
+    assert (bin_1hot % 2 == 0 or bin_1hot == 1), \
+        'assert fail: {} % 2 == 0 or {} == 1'.format(bin_1hot)
 
     ret = [0] * num_class
     for i in range(num_class + 1):
-        if bin_int >> i == 0:
+        if bin_1hot >> i == 0:
             ret[-i] = 1
             return tuple(ret)
+
 
 def distill(dset_kind, dset_dic):
     '''
