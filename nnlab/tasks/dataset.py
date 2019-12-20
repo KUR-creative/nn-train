@@ -129,9 +129,7 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
             'c': _int64_feature(c),
             'mc': _int64_feature(len(src_dst_colormap)), # mask channels
             'img': _bytes_feature(img_bin.tobytes()),
-            'mask': _bytes_feature(mask_bin.tobytes()),
-        }
-
+            'mask': _bytes_feature(mask_bin.tobytes())}
         return tf.train.Example(features=tf.train.Features(feature=feature))
 
     
@@ -172,6 +170,8 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
             #cv2.imshow('mask', im.map_colors(src_dst_colormap.inverse, mask).astype(np.float64))
             cv2.waitKey(0)
 
+def read(dset_kind, tfrecord_dset):
+    return 1
 
 if __name__ == '__main__':
     src_dst_colormap = bidict({
