@@ -43,6 +43,14 @@ def tup_1hot(num_class, bin_1hot):
             ret[-i] = 1
             return tuple(ret)
 
+def bin_1hot(tup_1hot):
+    assert set(tup_1hot) == {0,1}, tup_1hot
+    assert sum(tup_1hot) == 1, tup_1hot
+    for place in range(len(tup_1hot)):
+        idx = -(place + 1)
+        if tup_1hot[idx] == 1:
+            return 2**place
+
 
 def distill(dset_kind, dset_dic):
     '''
