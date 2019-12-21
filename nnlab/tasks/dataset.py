@@ -30,6 +30,7 @@ def hex_rgb(tup_rgb):
     r,g,b = tup_rgb
     return (r << (8*2)) + (g << (8*1)) + b
 
+@F.autocurry
 def tup_1hot(num_class, bin_1hot):
     assert 0 < bin_1hot <= 2**(num_class - 1), \
         'assert fail: 0 < {} <= {}'.format(
@@ -50,7 +51,6 @@ def bin_1hot(tup_1hot):
         idx = -(place + 1)
         if tup_1hot[idx] == 1:
             return 2**place
-
 
 def distill(dset_kind, dset_dic):
     '''
@@ -178,36 +178,57 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
             writer.write(tf_example.SerializeToString())
 
 def read(dset_kind, tfrecord_dset):
-    return 1
-    if look_and_feel_check:
-        def parse_single_example(example):
-            return tf.io.parse_single_example(
-                example,
-                {'h': tf.io.FixedLenFeature([], tf.int64),
-                 'w': tf.io.FixedLenFeature([], tf.int64),
-                 'c': tf.io.FixedLenFeature([], tf.int64),
-                 'mc': tf.io.FixedLenFeature([], tf.int64),
-                 'img': tf.io.FixedLenFeature([], tf.string),
-                 'mask': tf.io.FixedLenFeature([], tf.string)})
-        # Load saved tfrecords dataset
-        snet_dset = tf.data.TFRecordDataset(out_path)
-        parsed_snet_dset = snet_dset.map(parse_single_example)
+    def parse_nums(example):
+        return tf.io.parse_single_example(
+            example,
+            {'num_train': tf.io.FixedLenFeature([], tf.int64),
+             'num_valid': tf.io.FixedLenFeature([], tf.int64),
+             'num_test':  tf.io.FixedLenFeature([], tf.int64),
+             'num_class': tf.io.FixedLenFeature([], tf.int64)})
+    def parse_colormap(num_class, example):
+        n = num_class
+        return tf.io.parse_single_example(
+            example,
+            {'src_rgbs':  tf.io.FixedLenFeature([n], tf.int64, [-1]*n),
+             'dst_1hots': tf.io.FixedLenFeature([n], tf.int64, [-1]*n)})
+    def parse_im_pair(example):
+        return tf.io.parse_single_example(
+            example,
+            {'h': tf.io.FixedLenFeature([], tf.int64),
+             'w': tf.io.FixedLenFeature([], tf.int64),
+             'c': tf.io.FixedLenFeature([], tf.int64),
+             'mc': tf.io.FixedLenFeature([], tf.int64),
+             'img': tf.io.FixedLenFeature([], tf.string),
+             'mask': tf.io.FixedLenFeature([], tf.string)})
 
-        # Display image, maskss
-        for no, datum in enumerate(parsed_snet_dset): 
-            h = datum['h'].numpy()
-            w = datum['w'].numpy()
-            c = datum['c'].numpy()
-            mc = datum['mc'].numpy()
-            img_raw = datum['img'].numpy()
-            mask_raw = datum['mask'].numpy()
+    for no, example in enumerate(tfrecord_dset): 
+        if no == 0:
+            datum = parse_nums(example)
+            num_train = datum['num_train'].numpy()
+            num_valid = datum['num_valid'].numpy()
+            num_test  = datum['num_test'].numpy()
+            num_class = datum['num_class'].numpy()
+        elif no == 1:
+            datum = parse_colormap(num_class, example)
+            src_rgbs  = datum['src_rgbs'].numpy().tolist()
+            dst_1hots = datum['dst_1hots'].numpy().tolist()
+            src_dst_colormap = bidict(F.zipdict(
+                map(tup_rgb, src_rgbs),
+                map(tup_1hot(num_class), dst_1hots)))
+        else:
+            break
 
-            img  = np.frombuffer(img_raw, dtype=np.uint8).reshape((h,w,c))
-            mask = np.frombuffer(mask_raw, dtype=np.uint8).reshape((h,w,mc))
-
-            cv2.imshow('im', img)
-            #cv2.imshow('mask', im.map_colors(src_dst_colormap.inverse, mask).astype(np.float64))
-            cv2.waitKey(0)
+    train_pairs =(tfrecord_dset.skip(2)
+                               .take(num_train).map(parse_im_pair))
+    valid_pairs =(tfrecord_dset.skip(2 + num_train)
+                               .take(num_valid).map(parse_im_pair))
+    test_pairs  =(tfrecord_dset.skip(2 + num_train + num_valid)
+                               .take(num_test).map(parse_im_pair))
+    return dict(
+        cmap  = src_dst_colormap,
+        train = train_pairs,
+        valid = valid_pairs,
+        test  = test_pairs)
 
 
 if __name__ == '__main__':

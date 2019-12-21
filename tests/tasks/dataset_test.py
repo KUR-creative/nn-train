@@ -1,9 +1,14 @@
 import yaml
 import pytest
 import tensorflow as tf
+import cv2
+import numpy as np
 
 from nnlab.tasks.dataset import tup_rgb, tup_1hot
 from nnlab.tasks import dataset
+from nnlab.utils import fp
+from nnlab.utils import image_utils as iu
+from nnlab.data import image as im
 
 def test_tup_rgb():
     assert tup_rgb(0x0000Ff) == (0,0,255)
@@ -47,12 +52,48 @@ def test_bin_1hot_arg_tup_must_have_only_1():
     assert dataset.bin_1hot((0,0,0,1)) == 1
     assert dataset.bin_1hot((1,0,0,0)) == 8
 
-#@pytest.mark.skip(reason="no way of currently testing this")
-def test_generate_and_load_tfrecord_dataset(tmp_path):
+def assert_pairs(src_dst_colormap, actual_tensor_pairs, expected_path_pairs):
+    ''' 
+    actual_tensor_pairs: list of (img, mask) from loaded dataset
+    expected_path_pairs: list of (img_path, mask_path)
+    '''
+    # Assert number of pairs is equal.
+    expected_num = len(expected_path_pairs)
+    actual_num = 0
+    for _ in actual_tensor_pairs: 
+        actual_num += 1
+    assert actual_num == expected_num
+
+    # Assert images and masks are equal.
+    expected_pairs = fp.map(fp.lmap(cv2.imread), expected_path_pairs)
+    for actual, expected in zip(actual_tensor_pairs, expected_pairs):
+        h = actual['h'].numpy()
+        w = actual['w'].numpy()
+        c = actual['c'].numpy()
+        mc = actual['mc'].numpy()
+        img_raw = actual['img'].numpy()
+        mask_raw = actual['mask'].numpy()
+        actual_img  = np.frombuffer(img_raw, dtype=np.uint8).reshape((h,w,c))
+        actual_mask = np.frombuffer(mask_raw, dtype=np.uint8).reshape((h,w,mc))
+        expected_img, expected_mask = expected
+
+        actual_mapped_mask = im.map_colors(src_dst_colormap.inverse, actual_mask)
+        '''
+        # Look and Feel check!
+        cv2.imshow('ai', actual_img)
+        cv2.imshow('am', actual_mapped_mask)
+        cv2.imshow('ei', expected_img)
+        cv2.imshow('em', expected_mask)
+        cv2.waitKey(0)
+        '''
+
+        assert np.array_equal(actual_img, expected_img)
+        assert np.array_equal(actual_mapped_mask, expected_mask)
+
+def tfrecord_dset_testing(dset_path, tmp_path):
     # Generate dataset from old snet dataset
-    with open('tests/fixtures/dataset/snet285/indices/wk/190421wk50.yml') as f:
+    with open(dset_path) as f:
         dset_dic = yaml.safe_load(f)
-        print(dset_dic)
 
     dset = dataset.distill('old_snet', dset_dic)
     out_path = str(tmp_path / 'test_dset.tfrecords')
@@ -64,4 +105,11 @@ def test_generate_and_load_tfrecord_dataset(tmp_path):
     snet_dset = tf.data.TFRecordDataset(out_path)
     loaded_dset = dataset.read('old_snet', snet_dset)
 
-    assert loaded_dset == dset
+    assert loaded_dset['cmap'] == dset['cmap']
+    assert_pairs(loaded_dset['cmap'], loaded_dset['train'], dset['train'])
+    assert_pairs(loaded_dset['cmap'], loaded_dset['valid'], dset['valid'])
+    assert_pairs(loaded_dset['cmap'], loaded_dset['test'],  dset['test'])
+
+def test_generate_and_load_tfrecord_dataset(tmp_path):
+    tfrecord_dset_testing('tests/fixtures/dataset/snet285/indices/wk/190421wk50.yml', tmp_path)
+    tfrecord_dset_testing('tests/fixtures/dataset/snet285/indices/wk/190421wk50.yml', tmp_path)
