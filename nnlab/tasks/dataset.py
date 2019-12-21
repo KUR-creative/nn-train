@@ -17,7 +17,7 @@ from nnlab.utils import fp
 from nnlab.data import image as im #image util
 
 def tup_rgb(hex_rgb):
-    assert 0 < hex_rgb < 0xFFFFFF, hex_rgb
+    assert 0 <= hex_rgb <= 0xFFFFFF, hex_rgb
     return (
         (hex_rgb & 0xFF0000) >> (8 * 2),
         (hex_rgb & 0x00FF00) >> (8 * 1),
