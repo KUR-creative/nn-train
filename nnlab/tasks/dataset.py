@@ -116,9 +116,6 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
     Image, mask paths are must be paired, and exists.
     '''
     # Preconditions
-    num_train = len(train_path_pairs)
-    num_valid = len(valid_path_pairs)
-    num_test  = len(test_path_pairs)
     img_paths, mask_paths = fp.unzip(
         train_path_pairs + valid_path_pairs + test_path_pairs)
     for ipath, mpath in zip(img_paths, mask_paths):
@@ -127,12 +124,27 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
         assert os.path.exists(mpath), \
             f'image file "{mpath}" is not exists'
 
-    # Load images and masks.
-    imgseq = fp.map(cv2.imread, img_paths)
-    maskseq = fp.map(
-        fp.pipe(cv2.imread, im.map_colors(src_dst_colormap)), mask_paths)
+    # example functions
+    def nums_example(num_train, num_valid, num_test, num_class):
+        feature = {
+            'num_train': _int64_feature(num_train),
+            'num_valid': _int64_feature(num_valid),
+            'num_test':  _int64_feature(num_test),
+            'num_class': _int64_feature(num_class)}
+        return tf.train.Example(features=tf.train.Features(feature=feature))
 
-    # Create and save tfrecords dataset.
+    def colormap_example(src_dst_colormap):
+        src_rgbs  = list(src_dst_colormap.keys())
+        dst_1hots = list(src_dst_colormap.values())
+        feature = {
+            'src_rgbs': tf.train.Feature(
+                int64_list=tf.train.Int64List(
+                    value=fp.lmap(hex_rgb, src_rgbs))),
+            'dst_1hots': tf.train.Feature(
+                int64_list=tf.train.Int64List(
+                    value=fp.lmap(bin_1hot, dst_1hots)))}
+        return tf.train.Example(features=tf.train.Features(feature=feature))
+
     def datum_example(img_bin, mask_bin):
         h,w,c   = img_bin.shape
         mh,mw,_ = mask_bin.shape
@@ -148,13 +160,25 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
             'mask': _bytes_feature(mask_bin.tobytes())}
         return tf.train.Example(features=tf.train.Features(feature=feature))
 
-    
+    # Create and save tfrecords dataset.
     with tf.io.TFRecordWriter(out_path) as writer:
-        #for img_bin, mask_bin in tqdm(fp.take(4,zip(imgseq, maskseq)), total=4):
+        # 1. nums
+        tf_example = nums_example(
+            len(train_path_pairs), len(valid_path_pairs), len(test_path_pairs),
+            len(src_dst_colormap))
+        writer.write(tf_example.SerializeToString())
+        # 2. colormap
+        writer.write(colormap_example(src_dst_colormap).SerializeToString())
+        # 3. image,mask pairs
+        imgseq = fp.map(cv2.imread, img_paths)
+        maskseq = fp.map(
+            fp.pipe(cv2.imread, im.map_colors(src_dst_colormap)), mask_paths)
         for img_bin, mask_bin in tqdm(zip(imgseq, maskseq), total=len(img_paths)):
             tf_example = datum_example(img_bin, mask_bin)
             writer.write(tf_example.SerializeToString())
 
+def read(dset_kind, tfrecord_dset):
+    return 1
     if look_and_feel_check:
         def parse_single_example(example):
             return tf.io.parse_single_example(
@@ -178,7 +202,6 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
             img_raw = datum['img'].numpy()
             mask_raw = datum['mask'].numpy()
 
-            #img = Image.open(io.BytesIO(img_raw))
             img  = np.frombuffer(img_raw, dtype=np.uint8).reshape((h,w,c))
             mask = np.frombuffer(mask_raw, dtype=np.uint8).reshape((h,w,mc))
 
@@ -186,8 +209,6 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
             #cv2.imshow('mask', im.map_colors(src_dst_colormap.inverse, mask).astype(np.float64))
             cv2.waitKey(0)
 
-def read(dset_kind, tfrecord_dset):
-    return 1
 
 if __name__ == '__main__':
     src_dst_colormap = bidict({

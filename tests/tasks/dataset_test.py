@@ -47,7 +47,7 @@ def test_bin_1hot_arg_tup_must_have_only_1():
     assert dataset.bin_1hot((0,0,0,1)) == 1
     assert dataset.bin_1hot((1,0,0,0)) == 8
 
-@pytest.mark.skip(reason="no way of currently testing this")
+#@pytest.mark.skip(reason="no way of currently testing this")
 def test_generate_and_load_tfrecord_dataset(tmp_path):
     # Generate dataset from old snet dataset
     with open('tests/fixtures/dataset/snet285/indices/wk/190421wk50.yml') as f:
