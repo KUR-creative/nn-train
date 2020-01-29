@@ -231,7 +231,10 @@ def read(dset_kind, tfrecord_dset):
         cmap  = src_dst_colormap,
         train = train_pairs,
         valid = valid_pairs,
-        test  = test_pairs)
+        test  = test_pairs,
+        num_train = num_train,
+        num_valid = num_valid,
+        num_test  = num_test)
 
 
 if __name__ == '__main__':

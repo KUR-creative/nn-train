@@ -34,9 +34,7 @@ def generate_2dset():
         dset['train'], dset['valid'], dset['test'],
         dset['cmap'], out_dset_path)
 
-def main():
-    #generate_2dset()
-
+def look_and_feel_check():
     # Read dataset
     dset = fp.go(
         "./dataset/snet285rbk.tfrecords",
@@ -60,6 +58,16 @@ def main():
         cv2.imshow("i", img)
         cv2.imshow("m", mapped_mask)
         cv2.waitKey(0)
+
+def main():
+    #generate_2dset()
+    #look_and_feel_check()
+
+    dset = fp.go(
+        "./dataset/snet285rbk.tfrecords",
+        tf.data.TFRecordDataset,
+        lambda d: dataset.read("old_snet", d))
+    print(dset["num_train"])
 
 
 if __name__ == '__main__':
