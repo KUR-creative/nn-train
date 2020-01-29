@@ -178,6 +178,9 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
             writer.write(tf_example.SerializeToString())
 
 def read(dset_kind, tfrecord_dset):
+    '''
+    Read tfrecord_dset
+    '''
     def parse_nums(example):
         return tf.io.parse_single_example(
             example,

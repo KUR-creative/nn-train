@@ -1,3 +1,4 @@
+# map <F8> :wa<CR>:!pytest -vv tests<CR>
 import yaml
 import pytest
 import tensorflow as tf
