@@ -65,25 +65,16 @@ def look_and_feel_check():
     src_dst_colormap = dset["cmap"]
     n_train = dset["num_train"]
 
-    #s = time()
+    s = time()
     for datum in dset["train"].shuffle(n_train).repeat(10):
-        h  = datum["h"]#.numpy()
-        w  = datum["w"]#.numpy()
-        c  = datum["c"]#.numpy()
-        mc = datum["mc"]#.numpy()
-        #img_raw  = datum["img"].numpy()
-        #mask_raw = datum["mask"].numpy()
-        #img  = np.frombuffer(img_raw, dtype=np.uint8).reshape((h,w,c))
-        #mask = np.frombuffer(mask_raw, dtype=np.uint8).reshape((h,w,mc))
-        #print(datum["img"])
-        #print(type(datum["img"]))
-        #print(tf.io.decode_raw(datum["img"], tf.uint8))
-
+        h  = datum["h"]
+        w  = datum["w"]
+        c  = datum["c"]
+        mc = datum["mc"]
         img_tf, mask_tf = crop(
             tf.reshape(tf.io.decode_raw(datum["img"], tf.uint8), (h,w,c)),
             tf.reshape(tf.io.decode_raw(datum["mask"], tf.uint8), (h,w,mc)), 
             384)
-            #tf.convert_to_tensor(384))
         img, mask = img_tf.numpy(), mask_tf.numpy()
 
         # Look and Feel check!
@@ -91,7 +82,7 @@ def look_and_feel_check():
         cv2.imshow("i", img)
         cv2.imshow("m", mapped_mask)
         cv2.waitKey(0)
-    #t = time()
+    t = time()
 
     print("train time:", t - s)
 

@@ -42,7 +42,6 @@ def crop(img, mask, size):
 def decode_raw(str_tensor, shape, dtype=tf.uint8):
     return tf.reshape(tf.io.decode_raw(str_tensor, dtype), shape)
 
-AUTO = tf.data.experimental.AUTOTUNE
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     unet = model.Unet()
     loss_obj = tf.keras.losses.BinaryCrossentropy()
@@ -83,11 +82,11 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     seq = enumerate(
         dset["train"]
             .shuffle(n_train)
-            .map(crop_datum, AUTO)
+            .map(crop_datum, tf.data.experimental.AUTOTUNE)
             .cache()
             .batch(BATCH_SIZE)
             .repeat(EPOCHS)
-            .prefetch(AUTO), 
+            .prefetch(tf.data.experimental.AUTOTUNE), 
     start=1)
     for step, (img_tf, mask_tf) in seq:
         print(step)
@@ -112,6 +111,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             tf.summary.scalar('loss', train_loss.result(), step=step)
             tf.summary.scalar('accuracy', train_accuracy.result(), step=step)
         '''
+
     t = time()
     print('train time:', t - s)
 
