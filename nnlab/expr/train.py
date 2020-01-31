@@ -19,6 +19,7 @@ def train_step(unet, loss_obj, optimizer, train_loss, train_accuracy,
 
     train_loss(loss)
     train_accuracy(masks, preds)
+    return preds
 
 # Don't retrace each shape of img(performance issue)
 @tf.function(experimental_relax_shapes=True) 
@@ -89,7 +90,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             .prefetch(tf.data.experimental.AUTOTUNE), 
     start=1)
     for step, (img_bat, mask_bat) in seq:
-        print(step, type(img_bat), type(mask_bat))
+        '''
         # Look and Feel check!
         for i in range(BATCH_SIZE):
             img, mask = img_bat[i].numpy(), mask_bat[i].numpy()
@@ -98,19 +99,21 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             cv2.imshow("m", mapped_mask)
             cv2.waitKey(0)
         '''
-        train_step(
+        preds = train_step(
             unet, loss_obj, optimizer, 
             train_loss, train_accuracy, 
             img_bat, mask_bat)
 
-        if step % STEPS_PER_EPOCH == 0:
-            print('step: {}, loss: {}, accuracy: {}%'.format(
-                step, train_loss.result(), train_accuracy.result() * 100))
+        #if step % 5 == 0:
+        print('step: {}, loss: {}, accuracy: {}%'.format(
+            step, train_loss.result(), train_accuracy.result() * 100))
 
         with train_summary_writer.as_default():
             tf.summary.scalar('loss', train_loss.result(), step=step)
             tf.summary.scalar('accuracy', train_accuracy.result(), step=step)
-        '''
+            #tf.summary.image("inputs", img_bat, step)
+            #tf.summary.image("outputs", preds, step)
+            #tf.summary.image("answers", mask_bat, step)
 
     t = time()
     print('train time:', t - s)

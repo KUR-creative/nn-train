@@ -101,7 +101,7 @@ def main():
         tf.data.TFRecordDataset,
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
-    train.train(dset, 4, 384, 10)
+    train.train(dset, 4, 384, 3)
 
 
 if __name__ == '__main__':
