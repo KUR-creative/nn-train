@@ -74,9 +74,11 @@ def assert_pairs(src_dst_colormap, actual_tensor_pairs, expected_path_pairs):
         mc = actual['mc'].numpy()
         img_raw = actual['img'].numpy()
         mask_raw = actual['mask'].numpy()
-        actual_img  = np.frombuffer(img_raw, dtype=np.uint8).reshape((h,w,c))
-        actual_mask = np.frombuffer(mask_raw, dtype=np.uint8).reshape((h,w,mc))
+        actual_img  = np.frombuffer(img_raw, dtype=np.float32).reshape((h,w,c))
+        actual_mask = np.frombuffer(mask_raw, dtype=np.float32).reshape((h,w,mc))
         expected_img, expected_mask = expected
+        expected_img = (expected_img / 255).astype(np.float32)
+        expected_mask = expected_mask.astype(np.float32)
 
         actual_mapped_mask = im.map_colors(src_dst_colormap.inverse, actual_mask)
         '''

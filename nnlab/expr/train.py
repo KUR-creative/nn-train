@@ -39,7 +39,7 @@ def crop(img, mask, size):
             tf.image.crop_to_bounding_box(mask, y,x, size,size))
 
 @tf.function
-def decode_raw(str_tensor, shape, dtype=tf.uint8):
+def decode_raw(str_tensor, shape, dtype=tf.float32):
     return tf.reshape(tf.io.decode_raw(str_tensor, dtype), shape)
 
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
@@ -88,11 +88,11 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             .repeat(EPOCHS)
             .prefetch(tf.data.experimental.AUTOTUNE), 
     start=1)
-    for step, (img_tf, mask_tf) in seq:
-        print(step)
+    for step, (img_bat, mask_bat) in seq:
+        print(step, type(img_bat), type(mask_bat))
         # Look and Feel check!
         for i in range(BATCH_SIZE):
-            img, mask = img_tf[i].numpy(), mask_tf[i].numpy()
+            img, mask = img_bat[i].numpy(), mask_bat[i].numpy()
             mapped_mask = im.map_colors(src_dst_colormap.inverse, mask)
             cv2.imshow("i", img)
             cv2.imshow("m", mapped_mask)
@@ -101,7 +101,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
         train_step(
             unet, loss_obj, optimizer, 
             train_loss, train_accuracy, 
-            imgs, masks)
+            img_bat, mask_bat)
 
         if step % STEPS_PER_EPOCH == 0:
             print('step: {}, loss: {}, accuracy: {}%'.format(

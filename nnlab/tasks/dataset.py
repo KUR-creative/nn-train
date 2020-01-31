@@ -170,9 +170,15 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
         # 2. colormap
         writer.write(colormap_example(src_dst_colormap).SerializeToString())
         # 3. image,mask pairs
-        imgseq = fp.map(cv2.imread, img_paths)
+        imgseq = fp.map(
+            fp.pipe(cv2.imread, lambda im: (im / 255).astype(np.float32)), 
+            img_paths)
         maskseq = fp.map(
-            fp.pipe(cv2.imread, im.map_colors(src_dst_colormap)), mask_paths)
+            fp.pipe(
+                cv2.imread, 
+                im.map_colors(src_dst_colormap),
+                lambda im: im.astype(np.float32)), 
+            mask_paths)
         for img_bin, mask_bin in tqdm(zip(imgseq, maskseq), total=len(img_paths)):
             tf_example = datum_example(img_bin, mask_bin)
             writer.write(tf_example.SerializeToString())

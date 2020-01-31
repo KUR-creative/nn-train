@@ -72,10 +72,13 @@ def look_and_feel_check():
         c  = datum["c"]
         mc = datum["mc"]
         img_tf, mask_tf = crop(
-            tf.reshape(tf.io.decode_raw(datum["img"], tf.uint8), (h,w,c)),
-            tf.reshape(tf.io.decode_raw(datum["mask"], tf.uint8), (h,w,mc)), 
+            tf.reshape(tf.io.decode_raw(datum["img"], tf.float32), (h,w,c)),
+            tf.reshape(tf.io.decode_raw(datum["mask"], tf.float32), (h,w,mc)), 
             384)
         img, mask = img_tf.numpy(), mask_tf.numpy()
+        from nnlab.utils import image_utils as iu
+        print(iu.unique_colors(img))
+        print(iu.unique_colors(mask))
 
         # Look and Feel check!
         mapped_mask = im.map_colors(src_dst_colormap.inverse, mask)
@@ -87,9 +90,11 @@ def look_and_feel_check():
     print("train time:", t - s)
 
 def main():
-    #generate_2dset()
-    #look_and_feel_check()
+    '''
+    generate_2dset()
+    look_and_feel_check()
 
+    '''
     dset = fp.go(
         "./dataset/snet285rbk.tfrecords",
         #"./dataset/snet285wk.tfrecords",
