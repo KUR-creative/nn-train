@@ -1,5 +1,6 @@
 import numpy as np
 from bidict import bidict
+import funcy as F
 
 from nnlab.utils import fp
 from nnlab.utils import dbg
@@ -33,7 +34,7 @@ def map_pixels(img, cond_color, true_color, false_color=None):
         lambda r: r.astype(np.uint8),
     )
 
-@fp.curry
+@F.autocurry
 def map_colors(src_dst_colormap, img): 
     '''
     Map colors of `img` w.r.t. `src_dst_colormap`.
@@ -48,7 +49,7 @@ def map_colors(src_dst_colormap, img):
     assert iu.unique_color_set(img) <= set(map( tuple, dic.keys() )), \
             (' img = {} > {} = dic \n It means some pixels in img' 
             +' cannot be mapped with this rgb<->1hot dict').format( 
-                iu.unique_color_set(img), str(set(map(tuple, dic.values()))))
+                iu.unique_color_set(img), set(map( tuple, dic.keys() )))
 
     h,w,_ = img.shape
     some_dst_color = next(iter(src_dst_colormap.values()))

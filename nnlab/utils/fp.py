@@ -6,9 +6,6 @@ tup = lambda f: lambda argtup: f(*argtup)
 go = lambda x,*fs: F.rcompose(*fs)(x)
 pipe = F.rcompose
 
-curry = F.autocurry
-pcurry = F.curry
-
 def inc(x): return x + 1
 def dec(x): return x - 1
 

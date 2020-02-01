@@ -2,7 +2,6 @@ from bidict import bidict
 import cv2
 import numpy as np
 import pytest
-import deal
 
 from nnlab.data import image as im
 from nnlab.utils import image_utils as iu
