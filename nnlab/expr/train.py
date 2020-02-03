@@ -24,7 +24,7 @@ def train_step(unet, loss_obj, optimizer, train_loss, train_accuracy,
     #print(preds.numpy())
 
     train_loss(loss)
-    train_accuracy(masks, preds)
+    train_accuracy(1 - loss)
     return preds
 
 # Don't retrace each shape of img(performance issue)
@@ -95,7 +95,8 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     optimizer = tf.keras.optimizers.Adam()
 
     train_loss = tf.keras.metrics.Mean(name="train_loss")
-    train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
+    train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
+    #train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
 
     s = time()
     for step, (img_bat, mask_bat) in seq:
@@ -117,17 +118,17 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
         #if step % 50 == 0:
         #if step % 25 == 0:
         if step % 2 == 0:
-            print('step: {}, loss: {}, accuracy: {}%'.format(
+            print("step: {}, loss: {}, accuracy: {}%".format(
                 step, train_loss.result(), train_accuracy.result() * 100))
             with train_summary_writer.as_default():
-                tf.summary.scalar('loss', train_loss.result(), step=step)
-                tf.summary.scalar('accuracy', train_accuracy.result(), step=step)
+                tf.summary.scalar("jaccard distance", train_loss.result(), step=step)
+                tf.summary.scalar("mean IoU", train_accuracy.result(), step=step)
                 tf.summary.image("inputs", img_bat, step)
                 tf.summary.image("outputs", preds, step)
                 tf.summary.image("answers", mask_bat, step)
 
     t = time()
-    print('train time:', t - s)
+    print("train time:", t - s)
 
 
 if __name__ == "__main__":
