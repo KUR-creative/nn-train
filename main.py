@@ -12,6 +12,8 @@ from nnlab.utils import file_utils as fu
 from nnlab.utils import fp
 from nnlab.data import image as im
 from nnlab.expr import train
+#from nnlab.nn import model
+#from nnlab.expr import inference
 
 def generate_2dset():
     # Generate dataset from old snet dataset(snet285rbk)
@@ -85,7 +87,9 @@ def main():
     print(dset["num_train"])
     #train.train(dset, 4, 384, 35)
     #train.train(dset, 4, 384, 3)
-    train.train(dset, 4, 384, 1)
+    train.train(dset, 4, 384, 100000)
+
+    #inference.segment(model.Unet(),gt
     
 
 if __name__ == '__main__':
