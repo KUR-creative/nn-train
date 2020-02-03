@@ -21,6 +21,7 @@ def train_step(unet, loss_obj, optimizer, train_loss, train_accuracy,
     #print(type(preds))
     #print(tf.shape(preds))
     #print(iu.unique_colors(preds.numpy()))
+    #print(preds.numpy())
 
     train_loss(loss)
     train_accuracy(masks, preds)
@@ -49,14 +50,6 @@ def decode_raw(str_tensor, shape, dtype=tf.float32):
     return tf.reshape(tf.io.decode_raw(str_tensor, dtype), shape)
 
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
-    unet = model.Unet()
-    #loss_obj = loss.jaccard_distance(dset["num_class"])
-    loss_obj = loss.jaccard_distance(dset["num_class"]) #tf.keras.losses.BinaryCrossentropy()
-    optimizer = tf.keras.optimizers.Adam()
-
-    train_loss = tf.keras.metrics.Mean(name="train_loss")
-    train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
-
     #-----------------------------------------------------------------------
     # Tensorboard
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -94,9 +87,19 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             .prefetch(tf.data.experimental.AUTOTUNE), 
     start=1)
 
-    s = time()
 
+    unet = model.Unet()
+    loss_obj = loss.jaccard_distance(dset["num_class"])
+    #loss_obj = tf.keras.losses.CategoricalCrossentropy()
+    #loss_obj = loss.goto0test_loss
+    optimizer = tf.keras.optimizers.Adam()
+
+    train_loss = tf.keras.metrics.Mean(name="train_loss")
+    train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
+
+    s = time()
     for step, (img_bat, mask_bat) in seq:
+        '''
         # Look and Feel check!
         print(step)
         for i in range(BATCH_SIZE):
@@ -122,7 +125,6 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
                 tf.summary.image("inputs", img_bat, step)
                 tf.summary.image("outputs", preds, step)
                 tf.summary.image("answers", mask_bat, step)
-        '''
 
     t = time()
     print('train time:', t - s)

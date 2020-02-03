@@ -30,3 +30,6 @@ def jaccard_distance(n_classes, weights=None, smooth=1.):
         jacc = tf.math.reduce_mean(numerator / denominator)
         return 1 - jacc
     return jacc_dist
+
+def goto0test_loss(y_true, y_pred):
+    return tf.math.abs(tf.math.reduce_sum(y_pred))
