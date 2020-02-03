@@ -4,7 +4,7 @@ model
 import tensorflow as tf
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import (
-    Conv2D, Conv2DTranspose, BatchNormalization, MaxPool2D, concatenate
+    Conv2D, Conv2DTranspose, BatchNormalization, MaxPool2D, concatenate, Softmax
 )
 
 class Unet(Model):
@@ -62,6 +62,8 @@ class Unet(Model):
         x = self.up4(x);
         x = concatenate([act0, x], axis=3)
         x = self.conv4[0](x); x = self.bn4[0](x); x = tf.nn.relu(x);
-        x = self.conv4[1](x); # last
+        x = self.conv4[1](x); 
+
+        x = tf.nn.softmax(x) # last
 
         return x

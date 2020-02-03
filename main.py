@@ -72,6 +72,7 @@ def look_and_feel_check():
     print("train time:", t - s)
 
 def main():
+    '''
     #generate_2dset()
     look_and_feel_check()
 
@@ -82,9 +83,9 @@ def main():
         tf.data.TFRecordDataset,
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
+    #train.train(dset, 4, 384, 15)
     train.train(dset, 4, 384, 3)
-    '''
-
+    
 
 if __name__ == '__main__':
     main()
