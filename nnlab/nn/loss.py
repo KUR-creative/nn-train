@@ -13,10 +13,10 @@ def jaccard_distance(n_classes, weights=None, smooth=1.):
     assert isinstance(smooth, numbers.Number)
 
     if weights is None: 
-        weights = np.ones( (1,1,n_classes) )
+        weights = tf.ones( (1,1,n_classes) )
     else:
         assert len(weights) == n_classes
-        weights = np.array(weights)
+        weights = tf.constant(weights, dtype=tf.float32)
 
     axis = tuple(range(n_classes))
     def jacc_dist(y_true, y_pred):
