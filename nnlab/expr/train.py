@@ -5,10 +5,11 @@ import cv2
 import tensorflow as tf
 
 from nnlab.nn import model
+from nnlab.nn import loss
 from nnlab.data import image as im
+#from nnlab.utils import image_utils as iu
 
-
-#@tf.function
+@tf.function
 def train_step(unet, loss_obj, optimizer, train_loss, train_accuracy,
         imgs, masks):
     with tf.GradientTape() as tape:
@@ -17,8 +18,13 @@ def train_step(unet, loss_obj, optimizer, train_loss, train_accuracy,
     gradients = tape.gradient(loss, unet.trainable_variables)
     optimizer.apply_gradients(zip(gradients, unet.trainable_variables))
 
+    #print(type(preds))
+    #print(tf.shape(preds))
+    #print(iu.unique_colors(preds.numpy()))
+    #print(preds.numpy())
+
     train_loss(loss)
-    train_accuracy(masks, preds)
+    train_accuracy(1 - loss)
     return preds
 
 # Don't retrace each shape of img(performance issue)
@@ -44,13 +50,6 @@ def decode_raw(str_tensor, shape, dtype=tf.float32):
     return tf.reshape(tf.io.decode_raw(str_tensor, dtype), shape)
 
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
-    unet = model.Unet()
-    loss_obj = tf.keras.losses.BinaryCrossentropy()
-    optimizer = tf.keras.optimizers.Adam()
-
-    train_loss = tf.keras.metrics.Mean(name="train_loss")
-    train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
-
     #-----------------------------------------------------------------------
     # Tensorboard
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -68,8 +67,6 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     src_dst_colormap = dset["cmap"]
     n_train = dset["num_train"]
 
-    s = time()
-
     @tf.function
     def crop_datum(datum):
         h  = datum["h"]
@@ -83,15 +80,29 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     seq = enumerate(
         dset["train"]
             .shuffle(n_train)
-            .map(crop_datum, tf.data.experimental.AUTOTUNE)
             .cache()
+            .map(crop_datum, tf.data.experimental.AUTOTUNE)
             .batch(BATCH_SIZE)
             .repeat(EPOCHS)
             .prefetch(tf.data.experimental.AUTOTUNE), 
     start=1)
+
+
+    unet = model.Unet()
+    loss_obj = loss.jaccard_distance(dset["num_class"])
+    #loss_obj = tf.keras.losses.CategoricalCrossentropy()
+    #loss_obj = loss.goto0test_loss
+    optimizer = tf.keras.optimizers.Adam()
+
+    train_loss = tf.keras.metrics.Mean(name="train_loss")
+    train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
+    #train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
+
+    s = time()
     for step, (img_bat, mask_bat) in seq:
         '''
         # Look and Feel check!
+        print(step)
         for i in range(BATCH_SIZE):
             img, mask = img_bat[i].numpy(), mask_bat[i].numpy()
             mapped_mask = im.map_colors(src_dst_colormap.inverse, mask)
@@ -104,19 +115,20 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             train_loss, train_accuracy, 
             img_bat, mask_bat)
 
-        #if step % 5 == 0:
-        print('step: {}, loss: {}, accuracy: {}%'.format(
-            step, train_loss.result(), train_accuracy.result() * 100))
-
-        with train_summary_writer.as_default():
-            tf.summary.scalar('loss', train_loss.result(), step=step)
-            tf.summary.scalar('accuracy', train_accuracy.result(), step=step)
-            #tf.summary.image("inputs", img_bat, step)
-            #tf.summary.image("outputs", preds, step)
-            #tf.summary.image("answers", mask_bat, step)
+        #if step % 50 == 0:
+        #if step % 25 == 0:
+        if step % 2 == 0:
+            print("step: {}, loss: {}, accuracy: {}%".format(
+                step, train_loss.result(), train_accuracy.result() * 100))
+            with train_summary_writer.as_default():
+                tf.summary.scalar("jaccard distance", train_loss.result(), step=step)
+                tf.summary.scalar("mean IoU", train_accuracy.result(), step=step)
+                tf.summary.image("inputs", img_bat, step)
+                tf.summary.image("outputs", preds, step)
+                tf.summary.image("answers", mask_bat, step)
 
     t = time()
-    print('train time:', t - s)
+    print("train time:", t - s)
 
 
 if __name__ == "__main__":

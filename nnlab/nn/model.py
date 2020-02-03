@@ -4,7 +4,7 @@ model
 import tensorflow as tf
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import (
-    Conv2D, Conv2DTranspose, BatchNormalization, MaxPool2D, concatenate
+    Conv2D, Conv2DTranspose, BatchNormalization, MaxPool2D, concatenate, Softmax
 )
 
 class Unet(Model):
@@ -35,8 +35,10 @@ class Unet(Model):
         self.bn3   = (BatchNormalization(), BatchNormalization())
 
         self.up4   = Conv2DTranspose(16, 3, strides=2, padding='same')
-        self.conv4 = (Conv2D(16, 3, padding='same'), Conv2D(1, 1, activation='sigmoid', padding='same'))
         self.bn4   = (BatchNormalization(),)
+        self.conv4 = (Conv2D(16, 3, padding='same'),)
+        #self.last  = Conv2D(1, 1, activation='softmax', padding='same') # last
+        self.last  = Conv2D(3, 1, activation='softmax', padding='same') # last
 
     @tf.function
     def call(self, img):
@@ -62,6 +64,8 @@ class Unet(Model):
         x = self.up4(x);
         x = concatenate([act0, x], axis=3)
         x = self.conv4[0](x); x = self.bn4[0](x); x = tf.nn.relu(x);
-        x = self.conv4[1](x); # last
+        x = self.last(x); # last
+
+        #x = tf.nn.softmax(x) 
 
         return x

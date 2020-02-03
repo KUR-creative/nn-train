@@ -36,24 +36,6 @@ def generate_2dset():
         dset['train'], dset['valid'], dset['test'],
         dset['cmap'], out_dset_path)
 
-# Don't retrace each shape of img(performance issue)
-@tf.function(experimental_relax_shapes=True) 
-def crop(img, mask, size):
-    h = tf.shape(img)[0]
-    w = tf.shape(img)[1]
-    #assert (h,w,1) == mask.shape
-
-    max_x = w - size
-    max_y = h - size
-    #assert max_x > size
-
-    x = tf.random.uniform([], maxval=max_x, dtype=tf.int32)
-    y = tf.random.uniform([], maxval=max_y, dtype=tf.int32)
-
-    #return (img[y:y+size, x:x+size], mask[y:y+size, x:x+size])
-    return (tf.image.crop_to_bounding_box(img, y,x, size,size),
-            tf.image.crop_to_bounding_box(mask, y,x, size,size))
-
 def look_and_feel_check():
     # Read dataset
     dset = fp.go(
@@ -71,7 +53,7 @@ def look_and_feel_check():
         w  = datum["w"]
         c  = datum["c"]
         mc = datum["mc"]
-        img_tf, mask_tf = crop(
+        img_tf, mask_tf = train.crop(
             tf.reshape(tf.io.decode_raw(datum["img"], tf.float32), (h,w,c)),
             tf.reshape(tf.io.decode_raw(datum["mask"], tf.float32), (h,w,mc)), 
             384)
@@ -91,7 +73,7 @@ def look_and_feel_check():
 
 def main():
     '''
-    generate_2dset()
+    #generate_2dset()
     look_and_feel_check()
 
     '''
@@ -101,8 +83,10 @@ def main():
         tf.data.TFRecordDataset,
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
-    train.train(dset, 4, 384, 3)
-
+    #train.train(dset, 4, 384, 35)
+    #train.train(dset, 4, 384, 3)
+    train.train(dset, 4, 384, 1)
+    
 
 if __name__ == '__main__':
     main()
