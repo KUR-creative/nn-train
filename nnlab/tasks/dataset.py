@@ -240,7 +240,8 @@ def read(dset_kind, tfrecord_dset):
         test  = test_pairs,
         num_train = num_train,
         num_valid = num_valid,
-        num_test  = num_test)
+        num_test  = num_test,
+        num_class = num_class)
 
 
 if __name__ == '__main__':
