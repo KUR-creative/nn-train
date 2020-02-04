@@ -1,4 +1,5 @@
 #map <F5> :wa<CR>:!python main.py<CR>
+#map <F8> :wa<CR>:!pytest -vv tests<CR>
 
 import yaml
 from bidict import bidict
