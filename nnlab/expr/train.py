@@ -93,7 +93,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     start=1)
 
 
-    unet = model.Unet()
+    unet = model.plain_unet0(num_filters=16, filter_vec=(3,1))
     loss_obj = loss.jaccard_distance(dset["num_class"])
     #loss_obj = tf.keras.losses.CategoricalCrossentropy()
     #loss_obj = loss.goto0test_loss

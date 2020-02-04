@@ -1,3 +1,4 @@
+#map <F4> :wa<CR>:!python % <CR>
 #map <F5> :wa<CR>:!python main.py<CR>
 #map <F8> :wa<CR>:!pytest -vv tests<CR>
 
@@ -86,9 +87,9 @@ def main():
         tf.data.TFRecordDataset,
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
-    #train.train(dset, 4, 384, 35)
+    train.train(dset, 4, 384, 35)
     #train.train(dset, 4, 384, 3)
-    train.train(dset, 4, 384, 100000)
+    #train.train(dset, 4, 384, 100000)
 
     #inference.segment(model.Unet(),gt
     
