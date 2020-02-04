@@ -25,7 +25,7 @@ def train_step(unet, loss_obj, optimizer, train_loss, train_accuracy,
 
     train_loss(loss)
     train_accuracy(1 - loss)
-    return preds
+    return preds#, loss
 
 # Don't retrace each shape of img(performance issue)
 @tf.function(experimental_relax_shapes=True) 
@@ -61,6 +61,11 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
         tf.summary.trace_export(
             name="trace_train", step=0, profiler_outdir=train_log_dir)
 
+    # Checkpoint
+    ckpt = tf.train.Checkpoint(step=tf.Variable(1))
+    ckpt_manager = tf.train.CheckpointManager(
+        ckpt, train_log_dir + '/ckpt', max_to_keep=8)
+
     #-----------------------------------------------------------------------
     # Train
     train_pairs = dset["train"]
@@ -88,7 +93,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     start=1)
 
 
-    unet = model.Unet()
+    unet = model.plain_unet0(num_filters=16, filter_vec=(3,1))
     loss_obj = loss.jaccard_distance(dset["num_class"])
     #loss_obj = tf.keras.losses.CategoricalCrossentropy()
     #loss_obj = loss.goto0test_loss
@@ -99,6 +104,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     #train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
 
     s = time()
+    min_loss = tf.constant(float('inf'))
     for step, (img_bat, mask_bat) in seq:
         '''
         # Look and Feel check!
@@ -115,17 +121,26 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             train_loss, train_accuracy, 
             img_bat, mask_bat)
 
-        #if step % 50 == 0:
+        now_loss = train_loss.result()
         #if step % 25 == 0:
-        if step % 2 == 0:
-            print("step: {}, loss: {}, accuracy: {}%".format(
-                step, train_loss.result(), train_accuracy.result() * 100))
+        #if step % 2 == 0:
+        if step % 50 == 0:
+            print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
+                step // 50, step, now_loss, train_accuracy.result() * 100))
             with train_summary_writer.as_default():
-                tf.summary.scalar("jaccard distance", train_loss.result(), step=step)
-                tf.summary.scalar("mean IoU", train_accuracy.result(), step=step)
+                tf.summary.scalar("loss", now_loss, step=step)
+                tf.summary.scalar("accuracy", train_accuracy.result(), step=step)
                 tf.summary.image("inputs", img_bat, step)
                 tf.summary.image("outputs", preds, step)
                 tf.summary.image("answers", mask_bat, step)
+
+        if min_loss > now_loss:
+            ckpt.step.assign(step)
+            ckpt_path = ckpt_manager.save()
+            print("Saved checkpoint")
+            print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
+                step // 50, step, now_loss, train_accuracy.result() * 100))
+            min_loss = now_loss
 
     t = time()
     print("train time:", t - s)

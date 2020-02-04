@@ -4,68 +4,106 @@ model
 import tensorflow as tf
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import (
-    Conv2D, Conv2DTranspose, BatchNormalization, MaxPool2D, concatenate, Softmax
+    Activation, BatchNormalization, 
+    Conv2D, Conv2DTranspose, concatenate, 
+    MaxPool2D, Softmax
 )
 
-class Unet(Model):
-    def __init__(self):
-        '''
-        inp                               out 
-          conv0 ---------act0-------> conv4
-            down0                   up4
-                conv1  --act1-> conv3
-                  down1       up3
-                        conv2
-        '''
-        super(Unet, self).__init__()
-        #self.inp = tf.keras.Input((None,None,3))
-        self.conv0 = (Conv2D(16, 3, padding='same'), Conv2D(16, 3, padding='same'), Conv2D(16, 1, padding='same'))
-        self.bn0   = (BatchNormalization(), BatchNormalization(), BatchNormalization())
-        self.down0 = MaxPool2D()
 
-        self.conv1 = (Conv2D(32, 3, padding='same'), Conv2D(32, 3, padding='same'), Conv2D(32, 1, padding='same'))
-        self.bn1   = (BatchNormalization(), BatchNormalization(), BatchNormalization())
-        self.down1 = MaxPool2D()
+def set_layer_BN_relu(input, layer_fn, *args, **kargs):
+    x = layer_fn(*args,**kargs)(input)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    return x
 
-        self.conv2 = (Conv2D(64, 3, padding='same'), Conv2D(64, 3, padding='same'), Conv2D(64, 1, padding='same'))
-        self.bn2   = (BatchNormalization(), BatchNormalization(), BatchNormalization())
-
-        self.up3   = Conv2DTranspose(32, 3, strides=2, padding='same')
-        self.conv3 = (Conv2D(32, 3, padding='same'), Conv2D(32, 1, padding='same'))
-        self.bn3   = (BatchNormalization(), BatchNormalization())
-
-        self.up4   = Conv2DTranspose(16, 3, strides=2, padding='same')
-        self.bn4   = (BatchNormalization(),)
-        self.conv4 = (Conv2D(16, 3, padding='same'),)
-        #self.last  = Conv2D(1, 1, activation='softmax', padding='same') # last
-        self.last  = Conv2D(3, 1, activation='softmax', padding='same') # last
-
-    @tf.function
-    def call(self, img):
-        x = self.conv0[0](img); x = self.bn0[0](x); x = tf.nn.relu(x);
-        x = self.conv0[1](x);   x = self.bn0[1](x); x = tf.nn.relu(x);
-        x = self.conv0[2](x);   x = self.bn0[2](x); act0 = tf.nn.relu(x);
-        x = self.down0(act0)
-
-        x = self.conv1[0](x); x = self.bn1[0](x); x = tf.nn.relu(x);
-        x = self.conv1[1](x); x = self.bn1[1](x); x = tf.nn.relu(x);
-        x = self.conv1[2](x); x = self.bn1[2](x); act1 = tf.nn.relu(x);
-        x = self.down1(act1)
-
-        x = self.conv2[0](x); x = self.bn2[0](x); x = tf.nn.relu(x);
-        x = self.conv2[1](x); x = self.bn2[1](x); x = tf.nn.relu(x);
-        x = self.conv2[2](x); x = self.bn2[2](x); x = tf.nn.relu(x);
-
-        x = self.up3(x);
-        x = concatenate([act1, x], axis=3)
-        x = self.conv3[0](x); x = self.bn3[0](x); x = tf.nn.relu(x);
-        x = self.conv3[1](x); x = self.bn3[1](x); x = tf.nn.relu(x);
-
-        x = self.up4(x);
-        x = concatenate([act0, x], axis=3)
-        x = self.conv4[0](x); x = self.bn4[0](x); x = tf.nn.relu(x);
-        x = self.last(x); # last
-
-        #x = tf.nn.softmax(x) 
-
+def down_block(x, cnum, kernel_init, filter_vec=(3,3,1), maxpool2x=True, 
+               kernel_regularizer=None, bias_regularizer=None):
+    for n in filter_vec:
+        x = set_layer_BN_relu(
+                x, Conv2D, cnum, (n,n), 
+                padding='same', kernel_initializer=kernel_init,
+                kernel_regularizer=kernel_regularizer, 
+                bias_regularizer=bias_regularizer)
+    if maxpool2x:
+        pool = MaxPool2D(pool_size=(2,2))(x)
+        return x, pool
+    else:
         return x
+
+def up_block(from_horizon, upward, cnum, kernel_init, filter_vec=(3,3,1), 
+             kernel_regularizer=None, bias_regularizer=None):
+    upward = Conv2DTranspose(cnum, (2,2), padding='same', strides=(2,2), 
+                 kernel_initializer=kernel_init,
+                 kernel_regularizer=kernel_regularizer,
+                 bias_regularizer=bias_regularizer)(upward)
+    merged = concatenate([from_horizon,upward], axis=3)
+    for n in filter_vec:
+        merged = set_layer_BN_relu(
+            merged, Conv2D, cnum, (n,n), padding='same', 
+            kernel_initializer=kernel_init,
+            kernel_regularizer=kernel_regularizer, 
+            bias_regularizer=bias_regularizer)
+    return merged
+
+def plain_unet0(input_size = (None,None,3), pretrained_weights = None,
+                kernel_init='he_normal', 
+                num_classes=3, last_activation='softmax',
+                num_filters=64, num_maxpool = 4, filter_vec=(3,3,1),
+                kernel_regularizer=None, bias_regularizer=None,
+                dropout=None):
+    '''
+    "plain" means train plain u-net. "0" means train from scratch.
+
+    depth(num_maxpool) = 4
+    inp -> 0-------8 -> out
+            1-----7
+             2---6
+              3-5
+               4     <--- dropout 
+    '''
+    cnum = num_filters
+    depth = num_maxpool
+
+    x = inp = Input(input_size)
+
+    down_convs = [None] * depth
+    for i in range(depth): 
+        down_convs[i], x = down_block(
+            x, 2**i * cnum, kernel_init, filter_vec=filter_vec, 
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer)
+
+    x = down_block(
+        x, 2**depth * cnum, 
+        kernel_init, filter_vec=filter_vec, maxpool2x=False,
+        kernel_regularizer=kernel_regularizer,
+        bias_regularizer=bias_regularizer)
+
+    x = Dropout(dropout)(x) if dropout else x
+
+    for i in reversed(range(depth)): 
+        x = up_block(
+            down_convs[i], x, 2**i * cnum, 
+            kernel_init, filter_vec=filter_vec,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer)
+
+    if last_activation == 'sigmoid':
+        out_channels = 1
+    else:
+        out_channels = num_classes
+    out = Conv2D(
+        out_channels, (1,1), padding='same',
+        kernel_initializer=kernel_init, activation = last_activation)(x)
+
+    model = Model(inputs=inp, outputs=out)
+
+    if(pretrained_weights):
+    	model.load_weights(pretrained_weights)
+
+    return model
+
+
+if __name__ == '__main__': 
+    model = plain_unet0() 
+    tf.keras.utils.plot_model(model, show_shapes=True)
