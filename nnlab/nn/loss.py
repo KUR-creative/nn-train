@@ -2,8 +2,9 @@
 loss
 '''
 import tensorflow as tf
+K = tf.keras.backend
 
-def jaccard_distance(n_classes, weights=None, smooth=1.):
+def jaccard_distance(n_classes, weights=None, smooth=1e-8):
     ''' 
     Cacluate class by class intersection & union.
     And then calculate smoothed jaccard_coefficient.
@@ -25,9 +26,12 @@ def jaccard_distance(n_classes, weights=None, smooth=1.):
 
         intersection = y_pred * y_true
         sum_ = y_pred + y_true
-        numerator = tf.math.reduce_sum(intersection, axis) + smooth
-        denominator = tf.math.reduce_sum(sum_ - intersection, axis) + smooth
-        jacc = tf.math.reduce_mean(numerator / denominator)
+        #numerator = tf.math.reduce_sum(intersection, axis) + smooth
+        #denominator = tf.math.reduce_sum(sum_ - intersection, axis) + smooth
+        #jacc = tf.math.reduce_mean(numerator / denominator)
+        numerator = K.sum(intersection, axis) + smooth
+        denominator = K.sum(sum_ - intersection, axis) + smooth
+        jacc = K.mean((numerator / denominator) * weights)
         return 1 - jacc
     return jacc_dist
 
