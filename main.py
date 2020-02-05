@@ -77,7 +77,7 @@ def look_and_feel_check():
 
 def main():
     '''
-    #generate_2dset()
+    generate_2dset()
     look_and_feel_check()
 
     '''
@@ -87,9 +87,9 @@ def main():
         tf.data.TFRecordDataset,
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
-    train.train(dset, 4, 384, 35)
+    #train.train(dset, 4, 384, 35)
     #train.train(dset, 4, 384, 3)
-    #train.train(dset, 4, 384, 100000)
+    train.train(dset, 4, 384, 100000)
 
     #inference.segment(model.Unet(),gt
     

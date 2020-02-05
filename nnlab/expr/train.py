@@ -3,29 +3,32 @@ from time import time
 
 import cv2
 import tensorflow as tf
+import numpy as np
 
 from nnlab.nn import model
+from nnlab.nn import metric
 from nnlab.nn import loss
 from nnlab.data import image as im
-#from nnlab.utils import image_utils as iu
+from nnlab.utils import image_utils as iu
 
-@tf.function
-def train_step(unet, loss_obj, optimizer, train_loss, train_accuracy,
-        imgs, masks):
+#@tf.function
+def train_step(unet, loss_obj, optimizer, #train_loss, 
+               train_accuracy,
+               imgs, masks):
     with tf.GradientTape() as tape:
         preds = unet(imgs)
         loss  = loss_obj(masks, preds)
     gradients = tape.gradient(loss, unet.trainable_variables)
     optimizer.apply_gradients(zip(gradients, unet.trainable_variables))
 
+    #print(gradients)
     #print(type(preds))
     #print(tf.shape(preds))
-    #print(iu.unique_colors(preds.numpy()))
+    #print(iu.unique_colors(preds.numpy()[0]))
     #print(preds.numpy())
 
-    train_loss(loss)
-    train_accuracy(1 - loss)
-    return preds#, loss
+    #train_loss(loss)
+    return preds, loss, train_accuracy(masks, preds)
 
 # Don't retrace each shape of img(performance issue)
 @tf.function(experimental_relax_shapes=True) 
@@ -72,6 +75,27 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     src_dst_colormap = dset["cmap"]
     n_train = dset["num_train"]
 
+    '''
+    '''
+    # Get class weights
+    num_b,num_g,num_r = 0,0,0
+    for i,datum in enumerate(dset["train"]):
+        h, w, mc = datum["h"], datum["w"], datum["mc"]
+        mask = decode_raw(datum["mask"], (h,w,mc))
+        num_b += np.sum(mask[:,:,0])
+        num_g += np.sum(mask[:,:,1])
+        num_r += np.sum(mask[:,:,2])
+        #print(num_b, num_g, num_r)
+
+    num_all = num_b + num_g + num_r
+    b,g,r = num_all/num_b, num_all/num_g, num_all/num_r
+    bgr = b + g + r
+    w_b, w_g, w_r = b/bgr, g/bgr, r/bgr
+    #print(w_b, w_g, w_r)
+
+    #print(dset["cmap"])
+    #exit()
+
     @tf.function
     def crop_datum(datum):
         h  = datum["h"]
@@ -93,15 +117,17 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     start=1)
 
 
-    unet = model.plain_unet0(num_filters=16, filter_vec=(3,1))
-    loss_obj = loss.jaccard_distance(dset["num_class"])
-    #loss_obj = tf.keras.losses.CategoricalCrossentropy()
+    unet = model.plain_unet0(
+        num_classes=dset["num_class"], num_filters=16, filter_vec=(3,1))
+    #loss_obj = loss.jaccard_distance(dset["num_class"], (w_b, w_g, w_r))
+    #loss_obj = loss.jaccard_distance(dset["num_class"])
+    loss_obj = tf.keras.losses.CategoricalCrossentropy()
     #loss_obj = loss.goto0test_loss
     optimizer = tf.keras.optimizers.Adam()
 
     train_loss = tf.keras.metrics.Mean(name="train_loss")
-    train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
-    #train_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
+    #train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
+    train_accuracy = metric.miou(dset["num_class"])
 
     s = time()
     min_loss = tf.constant(float('inf'))
@@ -109,37 +135,44 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
         '''
         # Look and Feel check!
         print(step)
+        #print(tf.shape(img_bat), tf.shape(mask_bat))
+        #print(img_bat.dtype, mask_bat.dtype)
         for i in range(BATCH_SIZE):
             img, mask = img_bat[i].numpy(), mask_bat[i].numpy()
-            mapped_mask = im.map_colors(src_dst_colormap.inverse, mask)
+            mapped_mask = mask
+            #mapped_mask = im.map_colors(src_dst_colormap.inverse, mask)
             cv2.imshow("i", img)
             cv2.imshow("m", mapped_mask)
             cv2.waitKey(0)
+            print(iu.unique_colors(mask))
         '''
-        preds = train_step(
-            unet, loss_obj, optimizer, 
-            train_loss, train_accuracy, 
+        preds, now_loss, accuracy = train_step(
+            unet, loss_obj, optimizer, #train_loss, 
+            train_accuracy, 
             img_bat, mask_bat)
 
-        now_loss = train_loss.result()
+        #now_loss = train_loss.result()
         #if step % 25 == 0:
         #if step % 2 == 0:
         if step % 50 == 0:
             print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
-                step // 50, step, now_loss, train_accuracy.result() * 100))
+                step // 50, step, now_loss.numpy(), accuracy.numpy() * 100))
             with train_summary_writer.as_default():
                 tf.summary.scalar("loss", now_loss, step=step)
-                tf.summary.scalar("accuracy", train_accuracy.result(), step=step)
+                tf.summary.scalar("accuracy", 1 - now_loss, step=step)
                 tf.summary.image("inputs", img_bat, step)
                 tf.summary.image("outputs", preds, step)
                 tf.summary.image("answers", mask_bat, step)
 
         if min_loss > now_loss:
+            #print(preds.dtype)
+            #print(tf.shape(preds))
+
             ckpt.step.assign(step)
             ckpt_path = ckpt_manager.save()
             print("Saved checkpoint")
             print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
-                step // 50, step, now_loss, train_accuracy.result() * 100))
+                step // 50, step, now_loss.numpy(), accuracy.numpy() * 100))
             min_loss = now_loss
 
     t = time()
