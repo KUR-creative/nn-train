@@ -123,6 +123,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     #loss_obj = loss.jaccard_distance(dset["num_class"], (w_b, w_g, w_r))
     #loss_obj = loss.jaccard_distance(dset["num_class"])
     loss_obj = tf.keras.losses.CategoricalCrossentropy()
+    acc_obj = metric.miou(dset["num_class"])
     #loss_obj = loss.goto0test_loss
     optimizer = tf.keras.optimizers.Adam()
 
@@ -147,8 +148,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             print(iu.unique_colors(mask))
         '''
         out_batch, train_loss, train_acc = train_step(
-            unet, loss_obj, optimizer,
-            metric.miou(dset["num_class"]), 
+            unet, loss_obj, optimizer, acc_obj, 
             img_batch, mask_batch)
 
         #if step % 2 == 0:
