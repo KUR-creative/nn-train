@@ -157,8 +157,8 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
                 step // 50, step, now_loss.numpy(), accuracy.numpy() * 100))
             with train_summary_writer.as_default():
-                tf.summary.scalar("loss", now_loss, step=step)
-                tf.summary.scalar("accuracy", 1 - now_loss, step=step)
+                tf.summary.scalar("loss(CategoricalCrossentropy)", now_loss, step=step)
+                tf.summary.scalar("accuracy(mIoU)", 1 - now_loss, step=step)
                 tf.summary.image("inputs", img_bat, step)
                 tf.summary.image("outputs", out_bat, step)
                 tf.summary.image("answers", mask_bat, step)
