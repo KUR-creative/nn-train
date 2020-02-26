@@ -1,4 +1,5 @@
 import datetime
+from collections import namedtuple
 from time import time
 
 import cv2
@@ -145,25 +146,24 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             cv2.waitKey(0)
             print(iu.unique_colors(mask))
         '''
-        out_batch, now_loss, accuracy = train_step(
-            unet, loss_obj, optimizer, #train_loss, 
+        out_batch, train_loss, train_acc = train_step(
+            unet, loss_obj, optimizer,
             metric.miou(dset["num_class"]), 
             img_batch, mask_batch)
 
-        #now_loss = train_loss.result()
         #if step % 2 == 0:
         #if step % 50 == 0:
         if step % 25 == 0:
-            print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
-                step // 50, step, now_loss.numpy(), accuracy.numpy() * 100))
+            print("epoch: {} ({} step), loss: {}, train_acc: {}%".format(
+                step // 50, step, train_loss.numpy(), train_acc.numpy() * 100))
             with train_summary_writer.as_default():
-                tf.summary.scalar("loss(CategoricalCrossentropy)", now_loss, step=step)
-                tf.summary.scalar("accuracy(mIoU)", 1 - now_loss, step=step)
+                tf.summary.scalar("loss(CategoricalCrossentropy)", train_loss, step)
+                tf.summary.scalar("accuracy(mIoU)", 1 - train_loss, step)
                 tf.summary.image("inputs", img_batch, step)
                 tf.summary.image("outputs", out_batch, step)
                 tf.summary.image("answers", mask_batch, step)
 
-        if min_loss > now_loss:
+        if min_loss > train_loss:
             #print(preds.dtype)
             #print(tf.shape(preds))
 
@@ -171,8 +171,8 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             ckpt_path = ckpt_manager.save()
             print("Saved checkpoint")
             print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
-                step // 50, step, now_loss.numpy(), accuracy.numpy() * 100))
-            min_loss = now_loss
+                step // 50, step, train_loss.numpy(), train_acc.numpy() * 100))
+            min_loss = train_loss
 
     t = time()
     print("train time:", t - s)
