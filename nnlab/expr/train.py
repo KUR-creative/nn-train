@@ -130,14 +130,14 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
 
     s = time()
     min_loss = tf.constant(float('inf'))
-    for step, (img_bat, mask_bat) in seq:
+    for step, (img_batch, mask_batch) in seq:
         '''
         # Look and Feel check!
         print(step)
-        #print(tf.shape(img_bat), tf.shape(mask_bat))
-        #print(img_bat.dtype, mask_bat.dtype)
+        #print(tf.shape(img_batch), tf.shape(mask_batch))
+        #print(img_batch.dtype, mask_batch.dtype)
         for i in range(BATCH_SIZE):
-            img, mask = img_bat[i].numpy(), mask_bat[i].numpy()
+            img, mask = img_batch[i].numpy(), mask_batch[i].numpy()
             mapped_mask = mask
             #mapped_mask = im.map_colors(src_dst_colormap.inverse, mask)
             cv2.imshow("i", img)
@@ -145,10 +145,10 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             cv2.waitKey(0)
             print(iu.unique_colors(mask))
         '''
-        out_bat, now_loss, accuracy = train_step(
+        out_batch, now_loss, accuracy = train_step(
             unet, loss_obj, optimizer, #train_loss, 
             metric.miou(dset["num_class"]), 
-            img_bat, mask_bat)
+            img_batch, mask_batch)
 
         #now_loss = train_loss.result()
         #if step % 2 == 0:
@@ -159,9 +159,9 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             with train_summary_writer.as_default():
                 tf.summary.scalar("loss(CategoricalCrossentropy)", now_loss, step=step)
                 tf.summary.scalar("accuracy(mIoU)", 1 - now_loss, step=step)
-                tf.summary.image("inputs", img_bat, step)
-                tf.summary.image("outputs", out_bat, step)
-                tf.summary.image("answers", mask_bat, step)
+                tf.summary.image("inputs", img_batch, step)
+                tf.summary.image("outputs", out_batch, step)
+                tf.summary.image("answers", mask_batch, step)
 
         if min_loss > now_loss:
             #print(preds.dtype)
