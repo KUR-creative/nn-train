@@ -13,9 +13,8 @@ from nnlab.data import image as im
 from nnlab.utils import image_utils as iu
 
 
-#@tf.function # TODO: Turn off when dev & test
-def train_step(unet, loss_obj, optimizer, #train_loss, 
-               accuracy, imgs, masks):
+#@tf.function # TODO: Turn on when train
+def train_step(unet, loss_obj, optimizer, accuracy, imgs, masks):
     with tf.GradientTape() as tape:
         out_batch = unet(imgs)
         loss = loss_obj(masks, out_batch)
@@ -30,6 +29,11 @@ def train_step(unet, loss_obj, optimizer, #train_loss,
 
     #train_loss(loss)
     return out_batch, loss, accuracy(masks, out_batch)
+
+#@tf.function # TODO: Turn on when train
+def valid_step(unet, loss_obj, accuracy, imgs, masks):
+    out_batch = unet(imgs)
+    return out_batch, loss_obj(masks,out_batch), accuracy(masks,out_batch)
 
 # Don't retrace each shape of img(performance issue)
 @tf.function(experimental_relax_shapes=True) 
@@ -153,15 +157,37 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
 
         #if step % 2 == 0:
         #if step % 50 == 0:
-        if step % 25 == 0:
+        if step % 25 == 0: # TODO: 1 epoch or..
             print("epoch: {} ({} step), loss: {}, train_acc: {}%".format(
                 step // 50, step, train_loss.numpy(), train_acc.numpy() * 100))
             with train_summary_writer.as_default():
                 tf.summary.scalar("loss(CategoricalCrossentropy)", train_loss, step)
-                tf.summary.scalar("accuracy(mIoU)", 1 - train_loss, step)
+                tf.summary.scalar("accuracy(mIoU)", train_acc, step)
                 tf.summary.image("inputs", img_batch, step)
                 tf.summary.image("outputs", out_batch, step)
                 tf.summary.image("answers", mask_batch, step)
+
+        if step % 50 == 0: # TODO: 1 epoch or..
+            valid_seq =(dset["valid"].map(crop_datum, tf.data.experimental.AUTOTUNE)
+                                     .batch(1)
+                                     .prefetch(tf.data.experimental.AUTOTUNE))
+            valid_loss = tf.Variable(0, dtype=tf.float32)
+            valid_acc = tf.Variable(0, dtype=tf.float32)
+            print("---- Calculate valid loss & accuracy ----")
+            for valid_img, valid_mask in valid_seq:
+            #NOTE^~~~~~~~  ^~~~~~~~~~ these are size 1 batch (1,h,w,c)
+                valid_out, now_loss, now_acc \
+                    = valid_step(unet, loss_obj, acc_obj, valid_img, valid_mask)
+                valid_loss = valid_loss + now_loss
+                valid_acc = valid_acc + now_acc
+            valid_loss = valid_loss / dset["num_valid"]
+            valid_acc = valid_acc / dset["num_valid"]
+            print("epoch: {} ({} step), avrg valid loss: {}, avrg valid acc: {}%".format(
+                step // 50, step, valid_loss.numpy(), valid_acc.numpy() * 100))
+            with train_summary_writer.as_default():
+                tf.summary.scalar("average valid loss(CategoricalCrossentropy)", 
+                    valid_loss, step)
+                tf.summary.scalar("average valid accuracy(mIoU)", valid_acc, step)
 
         if min_loss > train_loss:
             #print(preds.dtype)
