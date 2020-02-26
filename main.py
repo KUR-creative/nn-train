@@ -18,6 +18,9 @@ from nnlab.expr import train
 #from nnlab.expr import inference
 
 def generate_2dset():
+    '''
+    Generate two dataset(not 2d set). Temporary implementation..
+    '''
     # Generate dataset from old snet dataset(snet285rbk)
     old_dset_path = "dataset/snet285/indices/rbk/190421rbk200.yml"
     out_dset_path = "./dataset/snet285rbk.tfrecords"

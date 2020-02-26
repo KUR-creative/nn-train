@@ -76,7 +76,6 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     n_train = dset["num_train"]
 
     '''
-    '''
     # Get class weights
     num_b,num_g,num_r = 0,0,0
     for i,datum in enumerate(dset["train"]):
@@ -92,6 +91,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     bgr = b + g + r
     w_b, w_g, w_r = b/bgr, g/bgr, r/bgr
     #print(w_b, w_g, w_r)
+    '''
 
     #print(dset["cmap"])
     #exit()
@@ -177,7 +177,3 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
 
     t = time()
     print("train time:", t - s)
-
-
-if __name__ == "__main__":
-    main()
