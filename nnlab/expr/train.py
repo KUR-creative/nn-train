@@ -11,24 +11,24 @@ from nnlab.nn import loss
 from nnlab.data import image as im
 from nnlab.utils import image_utils as iu
 
-#@tf.function
+
+#@tf.function # TODO: Turn off when dev & test
 def train_step(unet, loss_obj, optimizer, #train_loss, 
-               train_accuracy,
-               imgs, masks):
+               accuracy, imgs, masks):
     with tf.GradientTape() as tape:
-        preds = unet(imgs)
-        loss  = loss_obj(masks, preds)
+        out_batch = unet(imgs)
+        loss = loss_obj(masks, out_batch)
     gradients = tape.gradient(loss, unet.trainable_variables)
     optimizer.apply_gradients(zip(gradients, unet.trainable_variables))
 
     #print(gradients)
-    #print(type(preds))
-    #print(tf.shape(preds))
-    #print(iu.unique_colors(preds.numpy()[0]))
-    #print(preds.numpy())
+    #print(type(out_batch))
+    #print(tf.shape(out_batch))
+    #print(iu.unique_colors(out_batch.numpy()[0]))
+    #print(out_batch.numpy())
 
     #train_loss(loss)
-    return preds, loss, train_accuracy(masks, preds)
+    return out_batch, loss, accuracy(masks, out_batch)
 
 # Don't retrace each shape of img(performance issue)
 @tf.function(experimental_relax_shapes=True) 
@@ -114,7 +114,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             .batch(BATCH_SIZE)
             .repeat(EPOCHS)
             .prefetch(tf.data.experimental.AUTOTUNE), 
-    start=1)
+        start=1)
 
 
     unet = model.plain_unet0(
@@ -127,7 +127,6 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
 
     train_loss = tf.keras.metrics.Mean(name="train_loss")
     #train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
-    train_accuracy = metric.miou(dset["num_class"])
 
     s = time()
     min_loss = tf.constant(float('inf'))
@@ -146,22 +145,22 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             cv2.waitKey(0)
             print(iu.unique_colors(mask))
         '''
-        preds, now_loss, accuracy = train_step(
+        out_bat, now_loss, accuracy = train_step(
             unet, loss_obj, optimizer, #train_loss, 
-            train_accuracy, 
+            metric.miou(dset["num_class"]), 
             img_bat, mask_bat)
 
         #now_loss = train_loss.result()
-        #if step % 25 == 0:
         #if step % 2 == 0:
-        if step % 50 == 0:
+        #if step % 50 == 0:
+        if step % 25 == 0:
             print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
                 step // 50, step, now_loss.numpy(), accuracy.numpy() * 100))
             with train_summary_writer.as_default():
                 tf.summary.scalar("loss", now_loss, step=step)
                 tf.summary.scalar("accuracy", 1 - now_loss, step=step)
                 tf.summary.image("inputs", img_bat, step)
-                tf.summary.image("outputs", preds, step)
+                tf.summary.image("outputs", out_bat, step)
                 tf.summary.image("answers", mask_bat, step)
 
         if min_loss > now_loss:
