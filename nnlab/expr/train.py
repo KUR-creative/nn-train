@@ -135,7 +135,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     #train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
 
     s = time()
-    min_loss = tf.constant(float('inf'))
+    min_valid_loss = tf.constant(float('inf'))
     for step, (img_batch, mask_batch) in seq:
         '''
         # Look and Feel check!
@@ -189,16 +189,13 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
                     valid_loss, step)
                 tf.summary.scalar("average valid accuracy(mIoU)", valid_acc, step)
 
-        if min_loss > train_loss:
-            #print(preds.dtype)
-            #print(tf.shape(preds))
-
-            ckpt.step.assign(step)
-            ckpt_path = ckpt_manager.save()
-            print("Saved checkpoint")
-            print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
-                step // 50, step, train_loss.numpy(), train_acc.numpy() * 100))
-            min_loss = train_loss
+            if min_valid_loss > valid_loss:
+                ckpt.step.assign(step)
+                ckpt_path = ckpt_manager.save()
+                print("Saved checkpoint")
+                print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
+                    step // 50, step, valid_loss.numpy(), valid_acc.numpy() * 100))
+                min_valid_loss = valid_loss
 
     t = time()
     print("train time:", t - s)

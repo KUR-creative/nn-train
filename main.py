@@ -90,9 +90,9 @@ def main():
         tf.data.TFRecordDataset,
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
-    #train.train(dset, 4, 384, 35)
-    #train.train(dset, 4, 384, 3)
-    train.train(dset, 4, 384, 100000)
+    #train.train(dset, 4, 384, 75)
+    train.train(dset, 4, 384, 5)
+    #train.train(dset, 4, 384, 100000)
 
     #inference.segment(model.Unet(),gt
     
