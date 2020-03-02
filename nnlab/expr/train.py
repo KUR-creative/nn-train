@@ -173,7 +173,6 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
                                      .prefetch(tf.data.experimental.AUTOTUNE))
             valid_loss = tf.Variable(0, dtype=tf.float32)
             valid_acc = tf.Variable(0, dtype=tf.float32)
-            print("---- Calculate valid loss & accuracy ----")
             for valid_img, valid_mask in valid_seq:
             #NOTE^~~~~~~~  ^~~~~~~~~~ these are size 1 batch (1,h,w,c)
                 valid_out, now_loss, now_acc \
@@ -182,6 +181,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
                 valid_acc = valid_acc + now_acc
             valid_loss = valid_loss / dset["num_valid"]
             valid_acc = valid_acc / dset["num_valid"]
+            
             print("epoch: {} ({} step), avrg valid loss: {}, avrg valid acc: {}%".format(
                 step // 50, step, valid_loss.numpy(), valid_acc.numpy() * 100))
             with train_summary_writer.as_default():
@@ -193,8 +193,6 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
                 ckpt.step.assign(step)
                 ckpt_path = ckpt_manager.save()
                 print("Saved checkpoint")
-                print("epoch: {} ({} step), loss: {}, accuracy: {}%".format(
-                    step // 50, step, valid_loss.numpy(), valid_acc.numpy() * 100))
                 min_valid_loss = valid_loss
 
     t = time()
