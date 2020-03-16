@@ -91,8 +91,9 @@ def main():
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
     #train.train(dset, 4, 384, 75)
-    train.train(dset, 4, 384, 5)
-    #train.train(dset, 4, 384, 100000)
+    #train.train(dset, 4, 384, 5)
+    train.train(dset, 4, 384, 400)
+    #train.train(dset, 4, 384, 4700)
 
     #inference.segment(model.Unet(),gt
     

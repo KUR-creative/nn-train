@@ -134,6 +134,8 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     train_loss = tf.keras.metrics.Mean(name="train_loss")
     #train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
 
+
+    export_model_dir = "logs/" + current_time + "/export_model"
     s = time()
     min_valid_loss = tf.constant(float('inf'))
     for step, (img_batch, mask_batch) in seq:
@@ -191,9 +193,11 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
 
             if min_valid_loss > valid_loss:
                 ckpt.step.assign(step)
-                ckpt_path = ckpt_manager.save()
-                print("Saved checkpoint")
+                ckpt_path = ckpt_manager.save(); print("Saved checkpoint")
+                tf.saved_model.save(unet, export_model_dir); print("Export saved_model ")
                 min_valid_loss = valid_loss
+
+                # export as savedModel format
 
     t = time()
     print("train time:", t - s)
