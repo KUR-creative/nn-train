@@ -113,7 +113,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             IMG_SIZE)
     seq = enumerate(
         dset["train"]
-            .shuffle(n_train)
+            .shuffle(n_train, reshuffle_each_iteration=True)
             .cache()
             .map(crop_datum, tf.data.experimental.AUTOTUNE)
             .batch(BATCH_SIZE)
