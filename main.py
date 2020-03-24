@@ -18,6 +18,9 @@ from nnlab.expr import train
 #from nnlab.expr import inference
 
 def generate_2dset():
+    '''
+    Generate two dataset(not 2d set). Temporary implementation..
+    '''
     # Generate dataset from old snet dataset(snet285rbk)
     old_dset_path = "dataset/snet285/indices/rbk/190421rbk200.yml"
     out_dset_path = "./dataset/snet285rbk.tfrecords"
@@ -87,9 +90,10 @@ def main():
         tf.data.TFRecordDataset,
         lambda d: dataset.read("old_snet", d))
     print(dset["num_train"])
-    #train.train(dset, 4, 384, 35)
-    #train.train(dset, 4, 384, 3)
-    train.train(dset, 4, 384, 100000)
+    #train.train(dset, 4, 384, 75)
+    #train.train(dset, 4, 384, 5)
+    train.train(dset, 4, 384, 400)
+    #train.train(dset, 4, 384, 4700)
 
     #inference.segment(model.Unet(),gt
     
