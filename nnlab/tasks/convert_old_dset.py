@@ -88,6 +88,4 @@ def look_and_feel_check():
 
     print("train time:", t - s)
 
-def run():
-    generate_2dset()
-    look_and_feel_check()
+def run(): generate_2dset(); look_and_feel_check()
