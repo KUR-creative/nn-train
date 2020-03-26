@@ -12,3 +12,7 @@ tags
 
 dataset
 logs
+
+# emacs
+\#*
+*~
