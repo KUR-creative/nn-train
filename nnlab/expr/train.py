@@ -1,3 +1,6 @@
+'''
+Train temporary nn
+'''
 import datetime
 from collections import namedtuple
 from time import time
@@ -15,6 +18,7 @@ from nnlab.utils import image_utils as iu
 
 #@tf.function # TODO: Turn on when train
 def train_step(unet, loss_obj, optimizer, accuracy, imgs, masks):
+    ''' Get results and gradients of 1 step of training. '''
     with tf.GradientTape() as tape:
         out_batch = unet(imgs)
         loss = loss_obj(masks, out_batch)
@@ -32,12 +36,14 @@ def train_step(unet, loss_obj, optimizer, accuracy, imgs, masks):
 
 #@tf.function # TODO: Turn on when train
 def valid_step(unet, loss_obj, accuracy, imgs, masks):
+    ''' Get results of 1 step of validation. '''
     out_batch = unet(imgs)
     return out_batch, loss_obj(masks,out_batch), accuracy(masks,out_batch)
 
 # Don't retrace each shape of img(performance issue)
 @tf.function(experimental_relax_shapes=True) 
 def crop(img, mask, size):
+    ''' Crop img and mask in (size, size) at same (y,x). '''
     h = tf.shape(img)[0]
     w = tf.shape(img)[1]
     #assert (h,w,1) == mask.shape
@@ -55,9 +61,15 @@ def crop(img, mask, size):
 
 @tf.function
 def decode_raw(str_tensor, shape, dtype=tf.float32):
+    ''' Decode str_tensor(no type) to dtype(defalut=tf.float32). '''
     return tf.reshape(tf.io.decode_raw(str_tensor, dtype), shape)
 
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
+    '''
+    Train dset with some (implicit) settings.
+
+    Temporary implementation for testing.
+    '''
     #-----------------------------------------------------------------------
     # Tensorboard
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")

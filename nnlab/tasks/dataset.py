@@ -1,4 +1,6 @@
 '''
+Dataset management
+
 `tasks` package are collection of useful scripts.
 `dataset` module are script for dataset management
 '''
@@ -17,6 +19,7 @@ from nnlab.utils import fp
 from nnlab.data import image as im #image util
 
 def tup_rgb(hex_rgb):
+    ''' hex rgb -> tuple rgb '''
     assert 0 <= hex_rgb <= 0xFFFFFF, hex_rgb
     return (
         (hex_rgb & 0xFF0000) >> (8 * 2),
@@ -32,6 +35,7 @@ def hex_rgb(tup_rgb):
 
 @F.autocurry
 def tup_1hot(num_class, bin_1hot):
+    ''' one-hot binary(int) -> one-hot (tuple) '''
     assert 0 < bin_1hot <= 2**(num_class - 1), \
         'assert fail: 0 < {} <= {}'.format(
             bin_1hot, 2**(num_class - 1))
@@ -54,9 +58,8 @@ def bin_1hot(tup_1hot):
 
 def distill(dset_kind, dset_dic):
     '''
-    Distill information from `dset_dic`(dataset dictionary): 
-    Get (`train_path_pairs`, `valid_path_pairs`, `test_path_pairs`, 
-    and `src_dst_colormap`).
+    Distill information from `dset_dic`(dataset dictionary)
+    Get (`train_path_pairs`, `valid_path_pairs`, `test_path_pairs`, `src_dst_colormap`).
     '''
     dic = dset_dic
     if dset_kind == 'old_snet': #TODO: Use multimethod
@@ -185,7 +188,7 @@ def generate(train_path_pairs, valid_path_pairs, test_path_pairs,
 
 def read(dset_kind, tfrecord_dset):
     '''
-    Read tfrecord_dset
+    Load(read) tfrecord_dset to dict
     '''
     def parse_nums(example):
         return tf.io.parse_single_example(

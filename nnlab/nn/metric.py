@@ -1,5 +1,5 @@
 '''
-performance metric
+Performance metrics
 '''
 
 import tensorflow as tf

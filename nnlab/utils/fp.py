@@ -1,3 +1,6 @@
+'''
+Functional programming
+'''
 from collections import namedtuple
 import funcy as F
 import itertools as I

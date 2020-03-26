@@ -1,3 +1,6 @@
+'''
+Image data manipulation
+'''
 import numpy as np
 from bidict import bidict
 import funcy as F
@@ -8,6 +11,9 @@ from nnlab.utils import image_utils as iu
 
 
 def map_pixels(img, cond_color, true_color, false_color=None):
+    '''
+    Make mask from img pixels that have cond_color, and replace with true_color
+    '''
     h,w,c = img.shape
     cond_color  = [[cond_color]]
     true_color  = [[true_color]]
@@ -36,10 +42,12 @@ def map_pixels(img, cond_color, true_color, false_color=None):
 
 @F.autocurry
 def map_colors(src_dst_colormap, img): 
-    '''
+    """
+    Map img color space w.r.t. src_dst_colormap.
+    
     Map colors of `img` w.r.t. `src_dst_colormap`.
     src_dst_colormap: {src1:dst1, src2:dst2, ...}
-    '''
+    """
     # Preconditions
     dic = src_dst_colormap
     assert ((type(dic) is bidict) or (type(dic) is dict) and 

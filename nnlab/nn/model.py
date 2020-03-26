@@ -1,5 +1,5 @@
 '''
-model
+Model (Temporarily, Unet model)
 '''
 import tensorflow as tf
 from tensorflow.keras import Model, Input
@@ -11,6 +11,7 @@ from tensorflow.keras.layers import (
 
 
 def set_layer_BN_relu(input, layer_fn, *args, **kargs):
+    ''' Helper fn: layer - BatchNormalization - relu. '''
     x = layer_fn(*args,**kargs)(input)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
@@ -18,6 +19,7 @@ def set_layer_BN_relu(input, layer_fn, *args, **kargs):
 
 def down_block(x, cnum, kernel_init, filter_vec=(3,3,1), maxpool2x=True, 
                kernel_regularizer=None, bias_regularizer=None):
+    ''' Unet encoder block. '''
     for n in filter_vec:
         x = set_layer_BN_relu(
                 x, Conv2D, cnum, (n,n), 
@@ -32,6 +34,7 @@ def down_block(x, cnum, kernel_init, filter_vec=(3,3,1), maxpool2x=True,
 
 def up_block(from_horizon, upward, cnum, kernel_init, filter_vec=(3,3,1), 
              kernel_regularizer=None, bias_regularizer=None):
+    ''' Unet decoder block. '''
     upward = Conv2DTranspose(cnum, (2,2), padding='same', strides=(2,2), 
                  kernel_initializer=kernel_init,
                  kernel_regularizer=kernel_regularizer,
@@ -52,6 +55,8 @@ def plain_unet0(input_size = (None,None,3), pretrained_weights = None,
                 kernel_regularizer=None, bias_regularizer=None,
                 dropout=None):
     '''
+    Build plain unet from scrateh.
+    
     "plain" means train plain u-net. "0" means train from scratch.
 
     depth(num_maxpool) = 4

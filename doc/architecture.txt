@@ -1,0 +1,134 @@
+ [GIT-HASH] 31dcf03
+
+ [ARCHITECTURE]
+$ tree -I '__pycache__|__*__.py|*.png' nnlab/
+nnlab/
+├── data
+│   ├── image.py
+│   └── io.py
+├── expr
+│   ├── inference.py
+│   └── train.py
+├── nn
+│   ├── loss.py
+│   ├── metric.py
+│   └── model.py
+├── tasks
+│   └── dataset.py
+└── utils
+    ├── dbg.py
+    ├── file_utils.py
+    ├── fp.py
+    └── image_utils.py
+
+$ tree -I '__pycache__|__*__.py|*.png|snet285' tests/
+tests/
+├── data
+│   ├── image_test.py
+│   └── io_test.py
+├── expr
+│   └── train_test.py
+├── fixtures
+│   ├── dataset
+│   │   ├── snet285rbk.tfrecords
+│   │   └── snet285wk.tfrecords
+│   └── masks
+├── nn
+│   └── loss_test.py
+└── tasks
+    └── dataset_test.py
+
+ [CODE]
+$ find -name "*.py" ! -name "__init__.py" | sort   # to make list
+(python)
+[it for it in dir(module) if not it.startswith("__")] # all members without internals
+from inspect import getmembers, isfunction
+[o[0] for o in getmembers(module, isfunction)] # only functions
+# You need to find out how to filter only user defined var and func..
+
+./path    first line of module docstring(must ends withOUT dot . )
+func1	  first line of func1 docstring(must ends with dot . )
+func2	  first line of func2 docstring(must ends with dot . )
+...
+
+# docstring Rules:
+# all docstring must starts with Capital letter.
+# module docstring must ends without dot
+# func docstring must ends with dot.
+# func docstring must 1 line of summary and contents.
+# If no docstring, function name is used for 1 line summary. 
+# _ in name is coverted to ('_' -> ' '). ending with dot(.).
+# order are source code order
+
+./main.py                   Entry point
+generate_2dset              Generate two dataset(not 2d set).
+look_and_feel_check         load and look dataset.
+main                        generate_2dset(), look_and_feel_check() # TODO: Remove it.
+
+./nnlab/data/image.py       Image data manipulation
+map_colors                  Map img color space w.r.t. src_dst_colormap.
+map_pixels                  Make mask from img pixels that have cond_color, and replace with true_color
+
+./nnlab/data/io.py          Data input-output
+OldSnetDset                 Old Snet Dataset Data(namedtuple).
+old_snet_data               Convert old-dataset-description (dict) -> OldSnetDset (namedtuple).
+
+./nnlab/expr/train.py       Train temporary nn
+crop                        Crop img and mask in (size, size) at same (y,x).
+decode_raw                  Decode str_tensor(no type) to dtype(defalut=tf.float32).
+train                       Train dset with some (implicit) settings.
+train_step                  Get results and gradients of 1 step of training.
+valid_step                  Get results of 1 step of validation '''
+
+./nnlab/nn/loss.py          User defined losses
+goto0test_loss              Go all pixels to 0 then it maximize..
+jaccard_distance            jaccard distance.
+
+./nnlab/nn/metric.py        Performance metrics
+miou                        miou.
+
+./nnlab/nn/model.py         Model (Temporarily, Unet model)
+down_block                  Unet encoder block
+plain_unet0                 Build plain unet from scrateh.
+set_layer_BN_relu           Helper fn: layer - BatchNormalization - relu '''
+up_block                    Unet decoder block
+
+./nnlab/tasks/dataset.py    Dataset management
+_bytes_feature              Returns a bytes_list from a string / byte.
+_float_feature              Returns a float_list from a float / double.
+_int64_feature              Returns an int64_list from a bool / enum / int / uint.
+bin_1hot                    one-hot (tuple) -> one-hot binary(int)
+tup_1hot                    one-hot binary(int) -> one-hot (tuple)
+hex_rgb                     tuple rgb -> hex rgb
+tup_rgb                     hex rgb -> tuple rgb
+distill                     Distill information from `dset_dic`(dataset dictionary)
+generate                    Generate dataset using image, mask path pairs 
+read                        Load(read) tfrecord_dset to dict
+
+./nnlab/utils/dbg.py        Debugging tools
+print_if_not                If cond is not true, then print msg.
+tap                         Print x and return x.
+
+./nnlab/utils/file_utils.py File processing
+children                    Return children file path list of `dirpath`
+descendants                 Return descendants file path list of `root_dirpath` 
+human_sorted                Sorts the given iterable in the way that is expected.
+replace1                    Return edited `path` by replacing `old` element(string)to `new`.
+write_text                  write text
+read_text                   read text
+
+./nnlab/utils/fp.py         Functional programming
+
+./nnlab/utils/image_utils.py Utilities for image processing
+modulo_padded               Pad val=0 pixels to image to make modulo * x width/height
+unique_color_set            unique color set            
+unique_colors               unique colors
+
+./tests/data/image_test.py  image test
+./tests/data/io_test.py     io test
+./tests/expr/train_test.py  train test
+./tests/nn/loss_test.py     loss test
+./tests/tasks/dataset_test.py dataset test
+
+
+# TODO: You can generate this automatically, in yaml format.

@@ -1,5 +1,5 @@
 '''
-loss
+User defined losses
 '''
 import tensorflow as tf
 K = tf.keras.backend
@@ -36,4 +36,5 @@ def jaccard_distance(n_classes, weights=None, smooth=1e-8):
     return jacc_dist
 
 def goto0test_loss(y_true, y_pred):
+    ''' Go all pixels to 0 then it maximize.. '''
     return tf.math.abs(tf.math.reduce_sum(y_pred))

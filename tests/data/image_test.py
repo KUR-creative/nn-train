@@ -1,3 +1,6 @@
+'''
+Test for data.image
+'''
 from bidict import bidict
 import cv2
 import numpy as np

@@ -1,3 +1,6 @@
+'''
+Data input-output
+'''
 import os
 from collections import namedtuple
 from pathlib import Path
@@ -17,6 +20,14 @@ OldSnetDset = namedtuple(
 )
 
 def old_snet_data(dset_dict):
+    '''
+    Convert old-dataset-description (dict) -> OldSnetDset (namedtuple)
+    
+    old-dataset-description was used for bioseg.
+    typically, dset.yml -> old-dataset-description -> config...
+    
+    This function just for migration.
+    '''
     imgpath  = lambda p: Path(dset_dict['imgs_dir'], p)
     maskpath = lambda p: Path(dset_dict['masks_dir'], p)
     train_imgpaths  = fp.lmap(imgpath, dset_dict['train_imgs'])

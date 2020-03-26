@@ -1,10 +1,12 @@
 '''
-Utils for File Processing
+File Processing
 '''
 import os
 import re
 from pathlib import PurePosixPath, Path
 
+import chardet
+import funcy as F
 
 def children(dirpath):
     ''' Return children file path list of `dirpath` '''
@@ -23,9 +25,9 @@ def descendants(root_dirpath):
             fpaths.append(str(path))
     return fpaths
 
-import funcy as F
 @F.autocurry
 def replace1(old, new, path):
+    ''' Return edited `path` by replacing `old` element(string)to `new` ''' 
     parts = list(Path(path).parts) # NOTE: because of set_in implementation..
     idx = parts.index(old)
     return str(Path(*F.set_in(parts, [idx], new)))
@@ -42,13 +44,6 @@ def write_text(path, text, mode=0o777, exist_ok=True):
     path.write_text(text)
 
 def read_text(path, encoding=None, errors=None):
-    '''
-    try:
-        return Path(path).read_text(encoding='UTF8', errors=errors)
-    except:
-        return Path(path).read_text(encoding='cp949', errors=errors)
-    '''
-    import chardet
     with open(path, 'rb') as f:
         rawdata = f.read()
         encoding = chardet.detect(rawdata)['encoding']

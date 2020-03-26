@@ -1,6 +1,9 @@
 #map <F4> :wa<CR>:!python % <CR>
 #map <F5> :wa<CR>:!python main.py<CR>
 #map <F8> :wa<CR>:!pytest -vv tests<CR>
+'''
+Entry point
+'''
 
 import yaml
 from bidict import bidict
@@ -19,7 +22,13 @@ from nnlab.expr import train
 
 def generate_2dset():
     '''
-    Generate two dataset(not 2d set). Temporary implementation..
+    Generate two dataset(not 2d set).
+    
+    One is 285 img-mask  rbk dataset,
+    Other is 285 img-mask wk dataset.
+
+    It generate and save. Temporary implementation..
+    TODO: refactor or remove it.
     '''
     # Generate dataset from old snet dataset(snet285rbk)
     old_dset_path = "dataset/snet285/indices/rbk/190421rbk200.yml"
@@ -44,6 +53,11 @@ def generate_2dset():
         dset['cmap'], out_dset_path)
 
 def look_and_feel_check():
+    '''
+    load and look dataset.
+    
+    TODO: Generalize using function argments
+    '''
     # Read dataset
     dset = fp.go(
         "./dataset/snet285rbk.tfrecords",
@@ -78,11 +92,9 @@ def look_and_feel_check():
 
     print("train time:", t - s)
 
-def main():
+def main(): 
     '''
-    generate_2dset()
-    look_and_feel_check()
-
+    generate_2dset(), look_and_feel_check() # TODO: Remove it
     '''
     dset = fp.go(
         "./dataset/snet285rbk.tfrecords",
@@ -97,6 +109,7 @@ def main():
 
     #inference.segment(model.Unet(),gt
     
+test_def = "nope"
 
 if __name__ == '__main__':
     main()

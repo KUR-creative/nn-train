@@ -1,3 +1,6 @@
+'''
+Utilities for image
+'''
 import numpy as np
 
 def unique_colors(img):
@@ -7,7 +10,8 @@ def unique_color_set(img):
     return set(map( tuple, unique_colors(img).tolist() ))
 
 def modulo_padded(img, modulo=16):
-    ''' Pad 0 pixels to image to make modulo * x width/height '''
+    ''' Pad val=0 pixels to image to make modulo * x width/height '''
+    #TODO: Generalize: pad val=x pixel
     h,w = img.shape[:2]
     h_padding = (modulo - (h % modulo)) % modulo
     w_padding = (modulo - (w % modulo)) % modulo

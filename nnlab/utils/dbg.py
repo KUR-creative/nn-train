@@ -1,3 +1,6 @@
+'''
+Debugging tools
+'''
 import funcy as F
 import sys
 
@@ -14,8 +17,8 @@ def print_if_not(cond, msg):
 @F.autocurry
 def tap(x, f=print):
     '''
-    If use your own print function,
-    tap(f=my_print)(x)
+    Print x and return x.
+    If use your own print function, tap(f=my_print)(x)
     '''
     f(x)
     return x
