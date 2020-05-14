@@ -35,6 +35,22 @@ easy_only로 할 일:
 manga109의 글자를 지우고 데이터셋 생성하기.
 
 --------------------------------------------------------
+
+20일까지 할 일
+- 데이터는 기존 그대로(split 맞추기) 쓰기
+- train/valid/test 데이터 로드하고 학습하기
+- 학습 중에 tensorboard로 이미지 확인하기
+- 여러 모델 학습시켜서 돌리기
+- pretrained network 사용하기
+- 통일된 성능 측정
+
+-> 논문에 쓸 내용 만들기
+- 다양한 모델의 성능 평가 및 내 해석
+    - 어떤 특징을 가진 모델이 성능이 잘 나오는지 파악할 것
+- 데이터에 대한 것
+
+------------------------------------------------
+
 다양한 데이터셋 대응 가능
     bioseg
     manga
@@ -65,8 +81,8 @@ requirements.txt
 doc
     todo.txt
 
-src
-    main.py         엔트리 포인트, 태스크 설정
+nnlab
+    main.py         엔트리 포인트, 태스크 설정[현재 test_dset 생성]
 
     util        재활용 가능 코드
         fp.py
@@ -74,17 +90,20 @@ src
         image_util.py
 
     data        데이터 관련 코드
-        io.py       데이터 io
+        io.py       데이터 io [old snet data dset_dict -> namedtuple]
         image.py    이미지 관련(img -> tfrecord..)
 
     expr        실험 관련 코드
-        train.py    학습 루프
+        train.py    학습 루프 [empty]
         test.py     학습 이후 성능 평가 등
 
     nn          뉴럴넷 구성 코드
         model.py    모델 설정
-        loss.py
-        metric.py
+        loss.py     [empty]
+        metric.py   [empty]
+        
+    tasks
+        dataset.py  [tfrecord dataset 생성]
 
 test
     utils
