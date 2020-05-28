@@ -57,29 +57,6 @@ def crop(img, mask, size):
 def decode_raw(str_tensor, shape, dtype=tf.float32):
     return tf.reshape(tf.io.decode_raw(str_tensor, dtype), shape)
 
-def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
-    #-----------------------------------------------------------------------
-    # Tensorboard
-    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    train_log_dir = "logs/" + current_time + "/train"
-    train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-
-    tf.summary.trace_on(graph=True, profiler=True)
-    with train_summary_writer.as_default():
-        tf.summary.trace_export(
-            name="trace_train", step=0, profiler_outdir=train_log_dir)
-
-    # Checkpoint
-    ckpt = tf.train.Checkpoint(step=tf.Variable(1))
-    ckpt_manager = tf.train.CheckpointManager(
-        ckpt, train_log_dir + '/ckpt', max_to_keep=8)
-
-    #-----------------------------------------------------------------------
-    # Train
-    train_pairs = dset["train"]
-    src_dst_colormap = dset["cmap"]
-    n_train = dset["num_train"]
-
     '''
     # Get class weights
     num_b,num_g,num_r = 0,0,0
@@ -97,6 +74,23 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
     w_b, w_g, w_r = b/bgr, g/bgr, r/bgr
     #print(w_b, w_g, w_r)
     '''
+def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
+    #-----------------------------------------------------------------------
+    # logs
+    #current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    current_time = _run.start_time.strftime("%Y%m%d-%H%M%S")
+    train_log_dir = "logs/" + current_time + "/train"
+
+    # Checkpoint
+    ckpt = tf.train.Checkpoint(step=tf.Variable(1))
+    ckpt_manager = tf.train.CheckpointManager(
+        ckpt, train_log_dir + '/ckpt', max_to_keep=8)
+
+    #-----------------------------------------------------------------------
+    # Train
+    train_pairs = dset["train"]
+    src_dst_colormap = dset["cmap"]
+    n_train = dset["num_train"]
 
     #print(dset["cmap"])
     #exit()
@@ -162,12 +156,16 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
         if step % 25 == 0: # TODO: 1 epoch or..
             print("epoch: {} ({} step), loss: {}, train_acc: {}%".format(
                 step // 50, step, train_loss.numpy(), train_acc.numpy() * 100))
-            with train_summary_writer.as_default():
-                tf.summary.scalar("loss(CategoricalCrossentropy)", train_loss, step)
-                tf.summary.scalar("accuracy(mIoU)", train_acc, step)
-                tf.summary.image("inputs", img_batch, step)
-                tf.summary.image("outputs", out_batch, step)
-                tf.summary.image("answers", mask_batch, step)
+            _run.log_scalar("loss(CategoricalCrossentropy)", train_loss.numpy(), step)
+            _run.log_scalar("accuracy(mIoU)", train_acc.numpy(), step)
+            #with train_summary_writer.as_default():
+            '''
+            tf.summary.scalar("loss(CategoricalCrossentropy)", train_loss, step)
+            tf.summary.scalar("accuracy(mIoU)", train_acc, step)
+            tf.summary.image("inputs", img_batch, step)
+            tf.summary.image("outputs", out_batch, step)
+            tf.summary.image("answers", mask_batch, step)
+            '''
 
         if step % 50 == 0: # TODO: 1 epoch or..
             valid_seq =(dset["valid"].map(crop_datum, tf.data.experimental.AUTOTUNE)
@@ -186,10 +184,14 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS):
             
             print("epoch: {} ({} step), avrg valid loss: {}, avrg valid acc: {}%".format(
                 step // 50, step, valid_loss.numpy(), valid_acc.numpy() * 100))
+            _run.log_scalar("average valid loss(CategoricalCrossentropy)", valid_loss.numpy(), step)
+            _run.log_scalar("average valid accuracy(mIoU)", valid_acc.numpy(), step)
+            '''
             with train_summary_writer.as_default():
                 tf.summary.scalar("average valid loss(CategoricalCrossentropy)", 
                     valid_loss, step)
                 tf.summary.scalar("average valid accuracy(mIoU)", valid_acc, step)
+            '''
 
             if min_valid_loss > valid_loss:
                 ckpt.step.assign(step)

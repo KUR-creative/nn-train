@@ -14,13 +14,16 @@ example
 def look_and_feel(dset_path):
     print(dset_path)
 ```
-`python -m nnlab.tasks.dataset_checking with DSET_PATH=/path/to/dset`
-`python -m nnlab.tasks.train_snet with DSET_PATH=dataset/easy.tfrecord`
-`python -m nnlab.tasks.train_snet with pre_learn_test DSET_PATH=dataset/easy.tfrecord`
+`python -m nnlab.tasks.dataset_checking with DSET_PATH=/path/to/dset`\
+`python -m nnlab.tasks.train_snet with DSET_PATH=dataset/easy.tfrecord`\
+`python -m nnlab.tasks.train_snet with pre_learn_test DSET_PATH=dataset/easy.tfrecord`\
+`python -m nnlab.tasks.train_snet with DSET_PATH=dataset/easy.tfrecord -m HOST:PORT:test NUM_EPOCHS=2` 
 
 
 # Omniboard
 run: `omniboard -m HOST:PORT:DB` \
+`omniboard -m ___.___.___.___:_____:test` \
+
 open: access `localhost:port` with web browser.
 
 -m means mongo? i dunno..

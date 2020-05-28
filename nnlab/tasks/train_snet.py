@@ -19,11 +19,22 @@ def cfg():
     IMG_SIZE = 384
     
 @ex.automain
-def train(DSET_PATH, NUM_EPOCHS, BATCH_SIZE, IMG_SIZE):
+def train(DSET_PATH, NUM_EPOCHS, BATCH_SIZE, IMG_SIZE, _run):
     print(DSET_PATH, NUM_EPOCHS, BATCH_SIZE, IMG_SIZE)
     dset = snet_tfrecord.read(
         tf.data.TFRecordDataset(DSET_PATH))
-    train.train(dset, BATCH_SIZE, IMG_SIZE, NUM_EPOCHS)
+    '''
+    print(_run)
+    print(dir(_run))
+    print(_run.start_time)
+    print(type(_run.start_time))
+    exit()
+    '''
+    # dset
+    # unet
+    # train logic
+    # report logic
+    train.train(dset, BATCH_SIZE, IMG_SIZE, NUM_EPOCHS, _run)
 
 # 지금은 정신없이 돌려봐야하는 시점이다.
 # 아직 뭔가 고정시키고 목표를 만들기보다,
