@@ -14,7 +14,9 @@ example
 def look_and_feel(dset_path):
     print(dset_path)
 ```
-`python -m nnlab.tasks.dataset_checking with dset_path=/path/to/dset`
+`python -m nnlab.tasks.dataset_checking with DSET_PATH=/path/to/dset`
+`python -m nnlab.tasks.train_snet with DSET_PATH=dataset/easy.tfrecord`
+`python -m nnlab.tasks.train_snet with pre_learn_test DSET_PATH=dataset/easy.tfrecord`
 
 
 # Omniboard
