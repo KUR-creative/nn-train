@@ -75,6 +75,15 @@ def decode_raw(str_tensor, shape, dtype=tf.float32):
     w_b, w_g, w_r = b/bgr, g/bgr, r/bgr
     #print(w_b, w_g, w_r)
     '''
+    
+def map_max_row(img, val=1):
+    assert len(img.shape) == 3 # rgb
+    img2d = img.reshape(-1,img.shape[2])
+    ret = np.zeros_like(img2d)
+    ret[np.arange(len(img2d)), img2d.argmax(1)] = val
+    #print(unique_colors(ret.reshape(img.shape)), img.dtype)
+    return ret.reshape(img.shape)
+    
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     #-----------------------------------------------------------------------
     # logs
@@ -198,10 +207,10 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
                 #mapped_out = im.map_colors(src_dst_colormap.inverse, np.around(valid_out.numpy()[0]))
                 #print('arounded ans', iu.unique_colors(np.around(valid_mask.numpy()[0])))
                 mapped_ans = im.map_colors(
-                    src_dst_colormap.inverse, np.around(valid_mask.numpy()[0]))
+                    src_dst_colormap.inverse, map_max_row(valid_mask.numpy()[0]))
                 #print('arounded out', iu.unique_colors(np.around(valid_out.numpy()[0])))
                 mapped_out = im.map_colors(
-                    src_dst_colormap.inverse, np.around(valid_out.numpy()[0]).astype(int))
+                    src_dst_colormap.inverse, map_max_row(valid_out.numpy()[0]).astype(int))
                 #print('mapped out', iu.unique_colors(mapped_out))
                 #print('img uniq', iu.unique_colors(valid_img.numpy()[0]))
                 
