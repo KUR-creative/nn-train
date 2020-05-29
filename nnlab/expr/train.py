@@ -86,35 +86,34 @@ def map_max_row(img, val=1):
     
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     #-----------------------------------------------------------------------
-    # logs
-    #current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    # Logs
     current_time = _run.start_time.strftime("%Y%m%d-%H%M%S")
     logs_dir = Path('logs', current_time)
-    train_log_dir = str(logs_dir / 'train')
+    ckpt_dir = logs_dir / 'ckpt'
     result_dir = logs_dir / 'result'
+    export_model_dir = logs_dir / 'export_model'
     result_dir.mkdir(parents=True, exist_ok=True)
 
     # Checkpoint
     ckpt = tf.train.Checkpoint(step=tf.Variable(1))
     ckpt_manager = tf.train.CheckpointManager(
-        ckpt, train_log_dir + '/ckpt', max_to_keep=8)
+        ckpt, str(ckpt_dir), max_to_keep=8)
 
-    #-----------------------------------------------------------------------
-    # Train
-    train_pairs = dset["train"]
+    # Color Map
     src_dst_colormap = dset["cmap"]
     
+    #-----------------------------------------------------------------------
+    # Train
+    num_train = dset["num_train"]
+    
+    # Train Data Sequence
     @tf.function
     def crop_datum(datum):
-        h  = datum["h"]
-        w  = datum["w"]
-        c  = datum["c"]
-        mc = datum["mc"]
+        h  = datum["h"]; w  = datum["w"]; c  = datum["c"]; mc = datum["mc"]
         return crop(
             decode_raw(datum["img"], (h,w,c)),
             decode_raw(datum["mask"], (h,w,mc)), 
             IMG_SIZE)
-    num_train = dset["num_train"]
     seq = enumerate(
         dset["train"]
             .shuffle(num_train, reshuffle_each_iteration=True)
@@ -124,46 +123,22 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
             .prefetch(tf.data.experimental.AUTOTUNE), 
         start=1)
 
+    # Model
     unet = model.plain_unet0(
         num_classes=dset["num_class"], num_filters=16, filter_vec=(3,1))
-    #loss_obj = loss.jaccard_distance(dset["num_class"], (w_b, w_g, w_r))
-    #loss_obj = loss.jaccard_distance(dset["num_class"])
     loss_obj = tf.keras.losses.CategoricalCrossentropy()
-    acc_obj = metric.miou(dset["num_class"])
-    #loss_obj = loss.goto0test_loss
     optimizer = tf.keras.optimizers.Adam()
-
-    train_loss = tf.keras.metrics.Mean(name="train_loss")
-    #train_accuracy = tf.keras.metrics.Mean(name="train_accuracy")
-
-    print(src_dst_colormap)
-    print(src_dst_colormap.inverse)
-    export_model_dir = "logs/" + current_time + "/export_model"
-    s = time()
+    acc_obj = metric.miou(dset["num_class"])
+    
+    s = time() # TODO: 1 epoch time
     min_valid_loss = tf.constant(float('inf'))
     for step, (img_batch, mask_batch) in seq:
-        '''
-        # Look and Feel check!
-        print(step)
-        #print(tf.shape(img_batch), tf.shape(mask_batch))
-        #print(img_batch.dtype, mask_batch.dtype)
-        for i in range(BATCH_SIZE):
-            img, mask = img_batch[i].numpy(), mask_batch[i].numpy()
-            mapped_mask = mask
-            #mapped_mask = im.map_colors(src_dst_colormap.inverse, mask)
-            cv2.imshow("i", img)
-            cv2.imshow("m", mapped_mask)
-            cv2.waitKey(0)
-            print(iu.unique_colors(mask))
-        '''
         out_batch, train_loss, train_acc = train_step(
-            unet, loss_obj, optimizer, acc_obj, 
+            unet, loss_obj, optimizer, acc_obj,
             img_batch, mask_batch)
-
-        #if step % 2 == 0:
-        #if step % 50 == 0:
-        #if step % 25 == 0: # TODO: 1 epoch or..
+        
         if step % 10 == 0: # TODO: 1 epoch or..
+            now_epoch = 
             print("epoch: {} ({} step), loss: {}, train_acc: {}%".format(
                 step // num_train + 1, step, train_loss.numpy(), train_acc.numpy() * 100))
             _run.log_scalar("loss(CategoricalCrossentropy)", train_loss.numpy(), step)
@@ -248,7 +223,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
             if min_valid_loss > valid_loss:
                 ckpt.step.assign(step)
                 ckpt_path = ckpt_manager.save(); print("Saved checkpoint")
-                tf.saved_model.save(unet, export_model_dir); print("Export saved_model ")
+                tf.saved_model.save(unet, str(export_model_dir)); print("Export saved_model ")
                 min_valid_loss = valid_loss
 
                 # export as savedModel format
