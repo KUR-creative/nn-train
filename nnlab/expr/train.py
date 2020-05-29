@@ -103,11 +103,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     # Train
     train_pairs = dset["train"]
     src_dst_colormap = dset["cmap"]
-    num_train = dset["num_train"]
-
-    #print(dset["cmap"])
-    #exit()
-
+    
     @tf.function
     def crop_datum(datum):
         h  = datum["h"]
@@ -118,16 +114,15 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
             decode_raw(datum["img"], (h,w,c)),
             decode_raw(datum["mask"], (h,w,mc)), 
             IMG_SIZE)
+    num_train = dset["num_train"]
     seq = enumerate(
         dset["train"]
             .shuffle(num_train, reshuffle_each_iteration=True)
-            .cache()
             .map(crop_datum, tf.data.experimental.AUTOTUNE)
             .batch(BATCH_SIZE)
             .repeat(EPOCHS)
             .prefetch(tf.data.experimental.AUTOTUNE), 
         start=1)
-
 
     unet = model.plain_unet0(
         num_classes=dset["num_class"], num_filters=16, filter_vec=(3,1))
@@ -189,9 +184,13 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
         #if step % 100 == 0: # TODO: 1 epoch or..
         if step % num_train == 0:
             num_valid = dset["num_valid"]
-            valid_seq =(dset["valid"].map(crop_datum, tf.data.experimental.AUTOTUNE)
-                                     .batch(1)
-                                     .prefetch(tf.data.experimental.AUTOTUNE))
+            valid_seq =(
+                dset["valid"]
+                    .shuffle(num_valid, reshuffle_each_iteration=True)
+                    .map(crop_datum, tf.data.experimental.AUTOTUNE)
+                    .batch(1) # useless
+                    .prefetch(tf.data.experimental.AUTOTUNE))
+
             valid_loss = tf.Variable(0, dtype=tf.float32)
             valid_acc = tf.Variable(0, dtype=tf.float32)
             result_pic = np.empty((num_valid * IMG_SIZE, 3 * IMG_SIZE, 3)) # TODO: optional
