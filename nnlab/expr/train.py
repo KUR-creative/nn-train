@@ -84,6 +84,12 @@ def map_max_row(img, val=1):
     ret[np.arange(len(img2d)), img2d.argmax(1)] = val
     #print(unique_colors(ret.reshape(img.shape)), img.dtype)
     return ret.reshape(img.shape)
+
+def log_train_values(now_epoch, step, train_loss, train_acc, _run):
+    print("epoch: {} ({} step), loss: {}, train_acc: {}%".format(
+        now_epoch, step, train_loss.numpy(), train_acc.numpy() * 100))
+    _run.log_scalar("loss(CategoricalCrossentropy)", train_loss.numpy(), step)
+    _run.log_scalar("accuracy(mIoU)", train_acc.numpy(), step)
     
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     #-----------------------------------------------------------------------
@@ -140,17 +146,14 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     s = time() # TODO: 1 epoch time
     min_valid_loss = tf.constant(float('inf'))
     for step, (img_batch, mask_batch) in seq:
+        now_epoch = step // steps_per_epoch
         out_batch, train_loss, train_acc = train_step(
             unet, loss_obj, optimizer, acc_obj,
             img_batch, mask_batch)
         
-        now_epoch = step // steps_per_epoch
         # Log train values
         if step % train_steps == 0: 
-            print("epoch: {} ({} step), loss: {}, train_acc: {}%".format(
-                now_epoch, step, train_loss.numpy(), train_acc.numpy() * 100))
-            _run.log_scalar("loss(CategoricalCrossentropy)", train_loss.numpy(), step)
-            _run.log_scalar("accuracy(mIoU)", train_acc.numpy(), step)
+            log_train_values(now_epoch, step, train_loss, train_acc, _run)
 
         # Log valid values
         if step % steps_per_epoch == 0:
