@@ -3,6 +3,7 @@ from collections import namedtuple
 from time import time
 from pathlib import Path
 import math
+from functools import partial
 
 import cv2
 import tensorflow as tf
@@ -23,19 +24,56 @@ def train_step(unet, loss_obj, optimizer, accuracy, imgs, masks):
     gradients = tape.gradient(loss, unet.trainable_variables)
     optimizer.apply_gradients(zip(gradients, unet.trainable_variables))
 
-    #print(gradients)
-    #print(type(out_batch))
-    #print(tf.shape(out_batch))
-    #print(iu.unique_colors(out_batch.numpy()[0]))
-    #print(out_batch.numpy())
-
-    #train_loss(loss)
     return out_batch, loss, accuracy(masks, out_batch)
 
-#@tf.function # TODO: Turn on when train
+@tf.function # TODO: Turn on when train
 def valid_step(unet, loss_obj, accuracy, imgs, masks):
     out_batch = unet(imgs)
     return out_batch, loss_obj(masks,out_batch), accuracy(masks,out_batch)
+
+#@tf.function # TODO: Turn on when train
+def valid_result(dset, IMG_SIZE, unet, loss_obj, acc_obj, return_res_pic=False):
+    num_valid = dset["num_valid"]
+    
+    # Save result picture
+    result_pic = None
+    if return_res_pic:
+        result_pic = np.empty((num_valid * IMG_SIZE, 3 * IMG_SIZE, 3))
+        
+    # Get validation result
+    valid_seq =(
+        dset["valid"]
+            .shuffle(num_valid, reshuffle_each_iteration=True)
+            .map(partial(crop_datum, IMG_SIZE), tf.data.experimental.AUTOTUNE)
+            .batch(1) 
+            .prefetch(tf.data.experimental.AUTOTUNE))
+    valid_loss = tf.Variable(0, dtype=tf.float32)
+    valid_acc = tf.Variable(0, dtype=tf.float32)
+    
+    for row_idx, (valid_img, valid_mask) in enumerate(valid_seq):
+    #NOTE^~~~~~~~  ^~~~~~~~~~ these are size 1 batch (1,h,w,c)
+        valid_out, now_loss, now_acc \
+            = valid_step(unet, loss_obj, acc_obj, valid_img, valid_mask)
+        valid_loss = valid_loss + now_loss
+        valid_acc = valid_acc + now_acc
+
+        if return_res_pic:
+            mapped_inp = valid_img.numpy()[0] * 255
+            mapped_ans = im.map_colors(
+                dset['cmap'].inverse, map_max_row(valid_mask.numpy()[0]))
+            mapped_out = im.map_colors(
+                dset['cmap'].inverse, map_max_row(valid_out.numpy()[0]).astype(int))
+
+            pic_row = np.concatenate([mapped_inp, mapped_out, mapped_ans], axis=1)
+            y = row_idx * IMG_SIZE
+            result_pic[y:y+IMG_SIZE] = pic_row
+            
+    valid_loss = valid_loss / num_valid
+    valid_acc = valid_acc / num_valid
+    
+    return valid_loss, valid_acc, result_pic
+    #return dict(valid_loss=valid_loss, valid_acc=valid_acc, result_pic=result_pic)
+
 
 # Don't retrace each shape of img(performance issue)
 @tf.function(experimental_relax_shapes=True) 
@@ -54,6 +92,14 @@ def crop(img, mask, size):
     #return (img[y:y+size, x:x+size], mask[y:y+size, x:x+size])
     return (tf.image.crop_to_bounding_box(img, y,x, size,size),
             tf.image.crop_to_bounding_box(mask, y,x, size,size))
+
+@tf.function
+def crop_datum(img_size, datum):
+    h = datum["h"]; w = datum["w"]; c = datum["c"]; mc = datum["mc"]
+    return crop(
+        decode_raw(datum["img"], (h,w,c)),
+        decode_raw(datum["mask"], (h,w,mc)), 
+        img_size)
 
 @tf.function
 def decode_raw(str_tensor, shape, dtype=tf.float32):
@@ -77,7 +123,7 @@ def decode_raw(str_tensor, shape, dtype=tf.float32):
     #print(w_b, w_g, w_r)
     '''
     
-def map_max_row(img, val=1):
+def map_max_row(img, val=1): # TODO: relocate to data.image
     assert len(img.shape) == 3 # rgb
     img2d = img.reshape(-1,img.shape[2])
     ret = np.zeros_like(img2d)
@@ -105,31 +151,22 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     ckpt = tf.train.Checkpoint(step=tf.Variable(1))
     ckpt_manager = tf.train.CheckpointManager(
         ckpt, str(ckpt_dir), max_to_keep=8)
-
-    # Color Map
-    src_dst_colormap = dset["cmap"]
     
     #-----------------------------------------------------------------------
     # Log frequency
     num_train = dset["num_train"]
     steps_per_epoch = int(math.ceil(num_train / BATCH_SIZE))
     train_steps = steps_per_epoch // 5
-    result_pic_steps = steps_per_epoch * 100
+    #result_pic_steps = steps_per_epoch * 100
+    result_pic_steps = steps_per_epoch
     print(steps_per_epoch, train_steps, result_pic_steps)
     #exit()
     
     # Train Data Sequence
-    @tf.function
-    def crop_datum(datum):
-        h  = datum["h"]; w  = datum["w"]; c  = datum["c"]; mc = datum["mc"]
-        return crop(
-            decode_raw(datum["img"], (h,w,c)),
-            decode_raw(datum["mask"], (h,w,mc)), 
-            IMG_SIZE)
     seq = enumerate(
         dset["train"]
             .shuffle(num_train, reshuffle_each_iteration=True)
-            .map(crop_datum, tf.data.experimental.AUTOTUNE)
+            .map(partial(crop_datum, IMG_SIZE), tf.data.experimental.AUTOTUNE)
             .batch(BATCH_SIZE)
             .repeat(EPOCHS)
             .prefetch(tf.data.experimental.AUTOTUNE), 
@@ -142,7 +179,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     optimizer = tf.keras.optimizers.Adam()
     acc_obj = metric.miou(dset["num_class"])
     
-    # Train
+    # Learning loop
     s = time() # TODO: 1 epoch time
     min_valid_loss = tf.constant(float('inf'))
     for step, (img_batch, mask_batch) in seq:
@@ -156,6 +193,35 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
             log_train_values(now_epoch, step, train_loss, train_acc, _run)
             
         # Valid
+        if step % steps_per_epoch == 0:
+            t = time()
+            print("1 epoch time:", t - s)
+            valid_loss, valid_acc, result_pic = valid_result(
+                dset, IMG_SIZE, unet, loss_obj, acc_obj,
+                return_res_pic=(step % result_pic_steps == 0))
+            
+            # Log validation
+            print("epoch: {} ({} step), avrg valid loss: {}, avrg valid acc: {}%".format(
+                now_epoch, step, valid_loss.numpy(), valid_acc.numpy() * 100))
+            _run.log_scalar("average valid loss(CategoricalCrossentropy)", valid_loss.numpy(), step)
+            _run.log_scalar("average valid accuracy(mIoU)", valid_acc.numpy(), step)
+
+            # Save result picture
+            if result_pic is not None:
+                result_pic_path = str(result_dir / f'valid_result_{step}.png')
+                ret = cv2.imwrite(result_pic_path, result_pic)
+                _run.add_artifact(result_pic_path, f'valid_result_{step}.png')
+            
+            # Save checkpoint
+            if min_valid_loss > valid_loss:
+                ckpt.step.assign(step)
+                ckpt_path = ckpt_manager.save(); print("Saved checkpoint")
+                tf.saved_model.save(unet, str(export_model_dir)); print("Export saved_model ")
+                min_valid_loss = valid_loss
+                
+        # rm: Get validation result
+        # log result / pic / ckpt
+        '''
         if step % steps_per_epoch == 0:
             num_valid = dset["num_valid"]
             valid_seq =(
@@ -181,9 +247,9 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
                 if step % result_pic_steps == 0:
                     mapped_inp = valid_img.numpy()[0] * 255
                     mapped_ans = im.map_colors(
-                        src_dst_colormap.inverse, map_max_row(valid_mask.numpy()[0]))
+                        dset['cmap'].inverse, map_max_row(valid_mask.numpy()[0]))
                     mapped_out = im.map_colors(
-                        src_dst_colormap.inverse, map_max_row(valid_out.numpy()[0]).astype(int))
+                        dset['cmap'].inverse, map_max_row(valid_out.numpy()[0]).astype(int))
                     
                     pic_row = np.concatenate([mapped_inp, mapped_out, mapped_ans], axis=1)
                     y = row_idx * IMG_SIZE
@@ -210,6 +276,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
                 min_valid_loss = valid_loss
 
                 # export as savedModel format
+        '''
 
     t = time()
     print("train time:", t - s)
