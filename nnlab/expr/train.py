@@ -2,6 +2,7 @@ import datetime
 from collections import namedtuple
 from time import time
 from pathlib import Path
+import math
 
 import cv2
 import tensorflow as tf
@@ -103,8 +104,13 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     src_dst_colormap = dset["cmap"]
     
     #-----------------------------------------------------------------------
-    # Train
+    # Log frequency
     num_train = dset["num_train"]
+    steps_per_epoch = int(math.ceil(num_train / BATCH_SIZE))
+    train_steps = steps_per_epoch // 5
+    result_pic_steps = steps_per_epoch * 100
+    print(steps_per_epoch, train_steps, result_pic_steps)
+    #exit()
     
     # Train Data Sequence
     @tf.function
@@ -130,6 +136,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     optimizer = tf.keras.optimizers.Adam()
     acc_obj = metric.miou(dset["num_class"])
     
+    # Train
     s = time() # TODO: 1 epoch time
     min_valid_loss = tf.constant(float('inf'))
     for step, (img_batch, mask_batch) in seq:
@@ -137,27 +144,16 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
             unet, loss_obj, optimizer, acc_obj,
             img_batch, mask_batch)
         
-        if step % 10 == 0: # TODO: 1 epoch or..
-            now_epoch = 
+        now_epoch = step // steps_per_epoch
+        # Log train values
+        if step % train_steps == 0: 
             print("epoch: {} ({} step), loss: {}, train_acc: {}%".format(
-                step // num_train + 1, step, train_loss.numpy(), train_acc.numpy() * 100))
+                now_epoch, step, train_loss.numpy(), train_acc.numpy() * 100))
             _run.log_scalar("loss(CategoricalCrossentropy)", train_loss.numpy(), step)
             _run.log_scalar("accuracy(mIoU)", train_acc.numpy(), step)
-            #with train_summary_writer.as_default():
-            '''
-            tf.summary.scalar("loss(CategoricalCrossentropy)", train_loss, step)
-            tf.summary.scalar("accuracy(mIoU)", train_acc, step)
-            tf.summary.image("inputs", img_batch, step)
-            tf.summary.image("outputs", out_batch, step)
-            tf.summary.image("answers", mask_batch, step)
-            '''
 
-        # log metric
-        # log valid result
-
-        #if step % 10 == 0: # TODO: 1 epoch or..
-        #if step % 100 == 0: # TODO: 1 epoch or..
-        if step % num_train == 0:
+        # Log valid values
+        if step % steps_per_epoch == 0:
             num_valid = dset["num_valid"]
             valid_seq =(
                 dset["valid"]
@@ -168,7 +164,10 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
 
             valid_loss = tf.Variable(0, dtype=tf.float32)
             valid_acc = tf.Variable(0, dtype=tf.float32)
-            result_pic = np.empty((num_valid * IMG_SIZE, 3 * IMG_SIZE, 3)) # TODO: optional
+
+            # Save result picture
+            if step % result_pic_steps == 0:
+                result_pic = np.empty((num_valid * IMG_SIZE, 3 * IMG_SIZE, 3)) # TODO: optional
             for row_idx, (valid_img, valid_mask) in enumerate(valid_seq):
             #NOTE^~~~~~~~  ^~~~~~~~~~ these are size 1 batch (1,h,w,c)
                 valid_out, now_loss, now_acc \
@@ -176,49 +175,29 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
                 valid_loss = valid_loss + now_loss
                 valid_acc = valid_acc + now_acc
                 
-                mapped_inp = valid_img.numpy()[0] * 255
-                #mapped_ans = im.map_colors(src_dst_colormap.inverse, np.around(valid_mask.numpy()[0]))
-                #mapped_out = im.map_colors(src_dst_colormap.inverse, np.around(valid_out.numpy()[0]))
-                #print('arounded ans', iu.unique_colors(np.around(valid_mask.numpy()[0])))
-                mapped_ans = im.map_colors(
-                    src_dst_colormap.inverse, map_max_row(valid_mask.numpy()[0]))
-                #print('arounded out', iu.unique_colors(np.around(valid_out.numpy()[0])))
-                mapped_out = im.map_colors(
-                    src_dst_colormap.inverse, map_max_row(valid_out.numpy()[0]).astype(int))
-                #print('mapped out', iu.unique_colors(mapped_out))
-                #print('img uniq', iu.unique_colors(valid_img.numpy()[0]))
-                
-                pic_row = np.concatenate([mapped_inp, mapped_out, mapped_ans], axis=1)
-                y = row_idx * IMG_SIZE
-                result_pic[y:y+IMG_SIZE] = pic_row
+                if step % result_pic_steps == 0:
+                    mapped_inp = valid_img.numpy()[0] * 255
+                    mapped_ans = im.map_colors(
+                        src_dst_colormap.inverse, map_max_row(valid_mask.numpy()[0]))
+                    mapped_out = im.map_colors(
+                        src_dst_colormap.inverse, map_max_row(valid_out.numpy()[0]).astype(int))
+                    
+                    pic_row = np.concatenate([mapped_inp, mapped_out, mapped_ans], axis=1)
+                    y = row_idx * IMG_SIZE
+                    result_pic[y:y+IMG_SIZE] = pic_row
 
             valid_loss = valid_loss / num_valid
             valid_acc = valid_acc / num_valid
 
-            result_pic_path = str(result_dir / f'valid_result_{step}.png')
-            #print(result_pic_path)
-            ret = cv2.imwrite(result_pic_path, result_pic)
-            #print(f'[{ret}]')
-            _run.add_artifact(result_pic_path, f'valid_result_{step}.png')
-            '''
-            cv2.imwrite('tmp_inp.png', np.around(valid_img.numpy()[0]) * 255)
-            cv2.imwrite('tmp_ans.png', mapped_ans)
-            cv2.imwrite('tmp_out.png', mapped_out * 255)
-            _run.add_artifact('tmp_ans.png',f'tmp_ans{step}.png')
-            _run.add_artifact('tmp_out.png',f'tmp_out{step}.png')
-            '''
-            # Build summary image [inp out ans] form.
+            if step % result_pic_steps == 0:
+                result_pic_path = str(result_dir / f'valid_result_{step}.png')
+                ret = cv2.imwrite(result_pic_path, result_pic)
+                _run.add_artifact(result_pic_path, f'valid_result_{step}.png')
             
             print("epoch: {} ({} step), avrg valid loss: {}, avrg valid acc: {}%".format(
-                step // num_train + 1, step, valid_loss.numpy(), valid_acc.numpy() * 100))
+                now_epoch, step, valid_loss.numpy(), valid_acc.numpy() * 100))
             _run.log_scalar("average valid loss(CategoricalCrossentropy)", valid_loss.numpy(), step)
             _run.log_scalar("average valid accuracy(mIoU)", valid_acc.numpy(), step)
-            '''
-            with train_summary_writer.as_default():
-                tf.summary.scalar("average valid loss(CategoricalCrossentropy)", 
-                    valid_loss, step)
-                tf.summary.scalar("average valid accuracy(mIoU)", valid_acc, step)
-            '''
 
             if min_valid_loss > valid_loss:
                 ckpt.step.assign(step)
