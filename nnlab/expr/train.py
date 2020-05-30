@@ -90,7 +90,7 @@ def log_train_values(now_epoch, step, train_loss, train_acc, _run):
         now_epoch, step, train_loss.numpy(), train_acc.numpy() * 100))
     _run.log_scalar("loss(CategoricalCrossentropy)", train_loss.numpy(), step)
     _run.log_scalar("accuracy(mIoU)", train_acc.numpy(), step)
-    
+
 def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     #-----------------------------------------------------------------------
     # Logs
@@ -147,15 +147,15 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
     min_valid_loss = tf.constant(float('inf'))
     for step, (img_batch, mask_batch) in seq:
         now_epoch = step // steps_per_epoch
+        
+        # Train
         out_batch, train_loss, train_acc = train_step(
             unet, loss_obj, optimizer, acc_obj,
             img_batch, mask_batch)
-        
-        # Log train values
         if step % train_steps == 0: 
             log_train_values(now_epoch, step, train_loss, train_acc, _run)
-
-        # Log valid values
+            
+        # Valid
         if step % steps_per_epoch == 0:
             num_valid = dset["num_valid"]
             valid_seq =(
@@ -197,6 +197,7 @@ def train(dset, BATCH_SIZE, IMG_SIZE, EPOCHS, _run):
                 ret = cv2.imwrite(result_pic_path, result_pic)
                 _run.add_artifact(result_pic_path, f'valid_result_{step}.png')
             
+            # Log validation
             print("epoch: {} ({} step), avrg valid loss: {}, avrg valid acc: {}%".format(
                 now_epoch, step, valid_loss.numpy(), valid_acc.numpy() * 100))
             _run.log_scalar("average valid loss(CategoricalCrossentropy)", valid_loss.numpy(), step)
