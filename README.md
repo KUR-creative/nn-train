@@ -1,6 +1,9 @@
 # nn-lab
+## 
+ 이를 통해 그림에서 텍스트 영역을 추론하는 SegNet을 학습시켰습니다.
 
-# How to run scripts
+
+## How to run scripts
 Script files in `tasks` modules are entry points of experiments(or just task). \
 run: `python -m nnlab.tasks.task_name [Sacred options]`
 
